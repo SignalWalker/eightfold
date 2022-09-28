@@ -1,0 +1,34 @@
+[package]
+name = "eightfold"
+description = "3D space partitioning library"
+authors = ["Ash Walker <ash@ashwalker.net>"]
+repository = "https://github.com/SignalWalker/eightfold"
+keywords = [ "gamedev", "graphics" ]
+
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = "^0.31"
+# lazy_static = "^1.4"
+thiserror = "^1.0"
+# rayon = "^1.5"
+# num_cpus = "^1.13"
+parking_lot = "^0.12"
+
+tracing = "^0.1"
+
+parry3d = { optional = true, version = "^0.9" }
+
+[dev-dependencies]
+clap = { version = "^3.2", features = [ "derive", "env" ] }
+tobj = { version = "^3.2", features = [ "merging", "reordering" ] }
+tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
+time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
+
+[features]
+default = []
+spatial = [ "dep:parry3d" ]
+
+[[example]]
+name = "voxelize"
