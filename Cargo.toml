@@ -33,7 +33,7 @@ parry3d = { optional = true, version = "^0.10" }
 
 [dev-dependencies]
 clap = { version = "^4.0", features = [ "derive", "env" ] }
-tobj = { version = "^3.2", features = [ "merging", "reordering" ] }
+tobj = { version = "^3.2", features = [ "reordering" ] }
 tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
 time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
 wgpu = { version = "^0.14" }
