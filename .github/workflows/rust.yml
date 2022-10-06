@@ -16,6 +16,12 @@ jobs:
   test:
     name: Check & Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v3
@@ -29,10 +35,18 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: ${{ matrix.rust }}
           profile: minimal
           override: true
           components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
@@ -41,6 +55,3 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
