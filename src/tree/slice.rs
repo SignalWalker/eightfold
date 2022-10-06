@@ -1,5 +1,4 @@
 use num_traits::AsPrimitive;
-use parking_lot::RwLock;
 
 use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData, TreeIndex};
 
@@ -8,7 +7,6 @@ use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData, TreeIndex};
 pub struct TreeSlice<'tree, T, Idx: TreeIndex> {
     tree: &'tree Octree<T, Idx>,
     root: Idx,
-    depth: Idx,
     height: Idx,
 }
 
@@ -20,7 +18,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
             Ok(TreeSlice {
                 tree: self,
                 root: index,
-                depth: self.depth_of_unchecked(index),
                 height: if index == self.root {
                     self.height()
                 } else {
@@ -34,7 +31,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         TreeSlice {
             tree: self,
             root: self.root,
-            depth: Idx::zero(),
             height: self.height(),
         }
     }

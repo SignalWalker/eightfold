@@ -8,7 +8,7 @@ mod slice;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ops::{AddAssign, Range, Shl, ShlAssign, Shr, ShrAssign},
+    ops::{Range, Shl, ShlAssign, Shr, ShrAssign},
 };
 
 pub use error::*;

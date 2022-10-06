@@ -1,6 +1,12 @@
 # Eightfold
 
-A library for spatial partitioning of 3D data.
+<p align="center">
+  <a href="https://crates.io/crates/eightfold"><img src="https://img.shields.io/crates/v/eightfold" alt="crates.io"/></a>
+  <a href="https://docs.rs/eightfold"><img src="https://img.shields.io/docsrs/eightfold" alt="docs.rs"/></a>
+  <a href="https://opensource.org/licenses/lgpl-license"><img src="https://img.shields.io/crates/l/eightfold" alt="LGPL 3.0 or later"/></a>
+</p>
+
+A library for spatial partitioning of 3D data. Built with [nalgebra](https://nalgebra.org).
 
 ## See Also
 

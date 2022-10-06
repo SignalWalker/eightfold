@@ -10,7 +10,7 @@ use std::{
     slice,
 };
 
-use bitvec::{slice::BitSlice, vec::BitVec};
+use bitvec::vec::BitVec;
 use num_traits::{AsPrimitive, PrimInt};
 
 /// Create a [StableVec] containing the arguments, as with `std::vec![]`.
