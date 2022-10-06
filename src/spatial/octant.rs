@@ -29,37 +29,37 @@ impl Octant {
         match self.0 {
             0 => AABB {
                 mins: *n,
-                maxs: x + v
+                maxs: x + v,
             },
             1 => AABB {
                 mins: P::new(n.x, n.y, n.z - v.z),
-                maxs: P::new(x.x + v.x, x.y + v.y, x.z)
+                maxs: P::new(x.x + v.x, x.y + v.y, x.z),
             },
             2 => AABB {
                 mins: P::new(n.x, n.y - v.y, n.z),
-                maxs: P::new(x.x + v.x, x.y, x.z + v.z)
+                maxs: P::new(x.x + v.x, x.y, x.z + v.z),
             },
             3 => AABB {
                 mins: P::new(n.x, n.y - v.y, n.z - v.z),
-                maxs: P::new(x.x + v.x, x.y, x.z)
+                maxs: P::new(x.x + v.x, x.y, x.z),
             },
             4 => AABB {
                 mins: P::new(n.x - v.x, n.y, n.z),
-                maxs: P::new(x.x, x.y + v.y, x.z + v.z)
+                maxs: P::new(x.x, x.y + v.y, x.z + v.z),
             },
             5 => AABB {
                 mins: P::new(n.x - v.x, n.y, n.z - v.z),
-                maxs: P::new(x.x, x.y + v.y, x.z)
+                maxs: P::new(x.x, x.y + v.y, x.z),
             },
             6 => AABB {
                 mins: P::new(n.x - v.x, n.y - v.y, n.z),
-                maxs: P::new(x.x, x.y, x.z + v.z)
+                maxs: P::new(x.x, x.y, x.z + v.z),
             },
             7 => AABB {
                 mins: n - v,
-                maxs: *x
+                maxs: *x,
             },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
