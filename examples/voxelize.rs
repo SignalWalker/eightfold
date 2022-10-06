@@ -1,8 +1,3 @@
-use std::collections::HashMap;
-
-use eightfold::{Octree, Real, WorldPoint};
-use nalgebra::Point3;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Color {
     Indexed(u32),
@@ -17,17 +12,17 @@ pub enum VertexField {
     Uv,
 }
 
-#[derive(Debug)]
-pub struct Triangle {
-    points: [WorldPoint; 3],
-    fields: HashMap<VertexField, Vec<Real>>,
-}
+// #[derive(Debug)]
+// pub struct Triangle {
+//     points: [WorldPoint; 3],
+//     fields: HashMap<VertexField, Vec<Real>>,
+// }
 
-impl Triangle {
-    pub fn voxelize(&self, tree: &mut Octree<Color>) {}
-}
+// impl Triangle {
+//     pub fn voxelize(&self, tree: &mut Octree<Color>) {}
+// }
 
 pub fn main() {
-    let mut tree: Octree<Color> = Octree::new();
-    for tri in [] {}
+    // let mut tree: Octree<Color> = Octree::new();
+    // for tri in [] {}
 }
