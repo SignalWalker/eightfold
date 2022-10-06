@@ -7,18 +7,16 @@ edition = "2021"
 description = "3D space partitioning library"
 readme = true
 repository = "https://github.com/SignalWalker/eightfold"
-keywords = [ "gamedev", "graphics", "octree" ]
 license = "LGPL-3.0-or-later"
+
+keywords = [ "gamedev", "graphics", "octree" ]
+categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
 
 [dependencies]
 nalgebra = "^0.31"
 num-traits = "^0.2"
-# lazy_static = "^1.4"
 thiserror = "^1.0"
-# rayon = "^1.5"
-# num_cpus = "^1.13"
 parking_lot = "^0.12"
-# static_assertions = "^1.1"
 
 # stablevec
 bitvec = "^1.0"
@@ -38,7 +36,7 @@ clap = { version = "^4.0", features = [ "derive", "env" ] }
 tobj = { version = "^3.2", features = [ "merging", "reordering" ] }
 tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
 time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
-wgpu = { version = "^0.13" }
+wgpu = { version = "^0.14" }
 
 [features]
 default = []
