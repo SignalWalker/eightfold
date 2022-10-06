@@ -286,45 +286,45 @@ impl<T> StableVec<T> {
         self.data = new_data;
     }
 
-    /// # Panics
-    ///
-    /// * `new_cap` < `self.flags.len()`
-    fn realloc_exact(&mut self, new_cap: usize) {
-        if new_cap < self.flags.len() {
-            panic!()
-        }
+    ///// # Panics
+    /////
+    ///// * `new_cap` < `self.flags.len()`
+    //fn realloc_exact(&mut self, new_cap: usize) {
+    //    if new_cap < self.flags.len() {
+    //        panic!()
+    //    }
 
-        if mem::size_of::<T>() == 0 {
-            self.cap = new_cap;
-            return;
-        }
+    //    if mem::size_of::<T>() == 0 {
+    //        self.cap = new_cap;
+    //        return;
+    //    }
 
-        if self.cap == new_cap {
-            return;
-        }
+    //    if self.cap == new_cap {
+    //        return;
+    //    }
 
-        unsafe { self.realloc_unchecked(new_cap) };
-    }
+    //    unsafe { self.realloc_unchecked(new_cap) };
+    //}
 
-    /// # Panics
-    ///
-    /// * `new_cap` < self.flags.len()
-    fn realloc_at_least(&mut self, new_cap: usize) {
-        if new_cap < self.flags.len() {
-            panic!()
-        }
+    ///// # Panics
+    /////
+    ///// * `new_cap` < self.flags.len()
+    //fn realloc_at_least(&mut self, new_cap: usize) {
+    //    if new_cap < self.flags.len() {
+    //        panic!()
+    //    }
 
-        if mem::size_of::<T>() == 0 {
-            self.cap = self.cap.max(new_cap);
-            return;
-        }
+    //    if mem::size_of::<T>() == 0 {
+    //        self.cap = self.cap.max(new_cap);
+    //        return;
+    //    }
 
-        if self.cap >= new_cap {
-            return;
-        }
+    //    if self.cap >= new_cap {
+    //        return;
+    //    }
 
-        unsafe { self.realloc_unchecked(new_cap) };
-    }
+    //    unsafe { self.realloc_unchecked(new_cap) };
+    //}
 
     pub fn shrink_to_fit(&mut self) {
         if self.cap == 0 || self.cap == self.init_amt {
@@ -516,19 +516,19 @@ impl<T> StableVec<T> {
         res
     }
 
-    pub fn extend_from_slice_cloned(&mut self, slice: &[T]) -> Vec<usize>
-    where
-        T: Clone,
-    {
-        todo!()
-    }
+    // pub fn extend_from_slice_cloned(&mut self, slice: &[T]) -> Vec<usize>
+    // where
+    //     T: Clone,
+    // {
+    //     todo!()
+    // }
 
-    pub fn extend_from_slice_copied(&mut self, slice: &[T]) -> Vec<usize>
-    where
-        T: Copy,
-    {
-        todo!()
-    }
+    // pub fn extend_from_slice_copied(&mut self, slice: &[T]) -> Vec<usize>
+    // where
+    //     T: Copy,
+    // {
+    //     todo!()
+    // }
 
     pub fn as_uninit_slice(&self) -> &[MaybeUninit<T>] {
         unsafe { slice::from_raw_parts(self.data.as_ptr() as *const _, self.cap) }
@@ -542,9 +542,9 @@ impl<T> StableVec<T> {
         self.flags.iter_ones().map(|i| &self[i])
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
-        self.flags.iter_ones().map(|i| todo!())
-    }
+    // pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+    //     self.flags.iter_ones().map(|i| todo!())
+    // }
 
     pub fn enumerate(&self) -> impl Iterator<Item = (usize, &T)> {
         self.flags.iter_ones().map(|i| (i, &self[i]))

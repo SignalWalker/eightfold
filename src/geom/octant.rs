@@ -8,22 +8,22 @@ use crate::{NodePoint, TreeIndex};
 /// A way to refer to octants in a 3D volume.
 ///
 /// # Diagram
-/// IJK>A, where `IJK` are the octant coords, and `A` is the corresponding child array index.
-/// ```
+/// `IJK>A`, where `IJK` are the octant coords, and `A` is the corresponding child array index.
+/// <pre>
 /// Lower           Upper
 /// -------------   -------------     2 - 6     J
 /// |000>0|100>4|   |010>2|110>6|   3 - 7 |     |
 /// |-----|-----|   |-----|-----|   |   | 4     ___ I
 /// |001>1|101>5|   |011>3|111>7|   1 - 5      /
 /// -------------   -------------             K
-/// ```
+/// </pre>
 ///
 /// So, you can think of it as being a right-handed coordinate system.
 ///
 /// Note: Face 0-1-2 winds clockwise, on that cube.
 #[repr(transparent)]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub struct Octant(pub(crate) u8);
+pub struct Octant(pub u8);
 
 impl Octant {
     /// Iterator through all possible octants
@@ -36,19 +36,23 @@ impl Octant {
         Self((i as u8 * 0b100) | (j as u8 * 0b010) | (k as u8))
     }
 
+    /// The `i` component of self.
     #[inline]
     pub fn i(self) -> u8 {
         self.0 & 0b100
     }
+    /// The `j` component of self.
     #[inline]
     pub fn j(self) -> u8 {
         self.0 & 0b010
     }
+    /// The `k` component of self.
     #[inline]
     pub fn k(self) -> u8 {
         self.0 & 0b001
     }
 
+    /// Get a [Vector3\<u8\>](Vector3) from Octant `0` to self.
     pub fn vector(self) -> Vector3<u8> {
         Vector3::new(self.i(), self.j(), self.k())
     }
@@ -69,7 +73,7 @@ impl From<Octant> for u8 {
 impl<Idx: TreeIndex + From<u8> + ClosedAdd> Add<Octant> for &NodePoint<Idx> {
     type Output = NodePoint<Idx>;
 
-    /// Get the NodePoint of an octant of self
+    /// Get the [NodePoint] of an [Octant] of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         NodePoint::new(
@@ -87,7 +91,7 @@ where
 {
     type Output = NodePoint<Idx>;
 
-    /// Get the NodePoint of an octant of self
+    /// Get the [NodePoint] of an [Octant] of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         Self::new(
