@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="https://crates.io/crates/eightfold"><img src="https://img.shields.io/crates/v/eightfold" alt="crates.io"/></a>
+  <a href="https://github.com/SignalWalker/eightfold/commits/main"><img src="https://img.shields.io/github/commits-since/SignalWalker/eightfold/0.1.0" alt="commits since last release"/></a>
   <a href="https://docs.rs/eightfold"><img src="https://img.shields.io/docsrs/eightfold" alt="docs.rs"/></a>
   <a href="https://opensource.org/licenses/lgpl-license"><img src="https://img.shields.io/crates/l/eightfold" alt="LGPL 3.0 or later"/></a>
 </p>
