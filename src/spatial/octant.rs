@@ -20,7 +20,50 @@ impl Octant {
         Ok(Self::from_center(&bb.center(), p))
     }
 
-    /// Construct an AABB by taking an octant from an existing AABB.
+    /// Construct an [AABB] such that `bb` is an octant of the result
+    pub fn sup_aabb(self, bb: &AABB) -> AABB {
+        use parry3d::math::Point as P;
+        let n = &bb.mins;
+        let x = &bb.maxs;
+        let v = x - n;
+        match self.0 {
+            0 => AABB {
+                mins: *n,
+                maxs: x + v
+            },
+            1 => AABB {
+                mins: P::new(n.x, n.y, n.z - v.z),
+                maxs: P::new(x.x + v.x, x.y + v.y, x.z)
+            },
+            2 => AABB {
+                mins: P::new(n.x, n.y - v.y, n.z),
+                maxs: P::new(x.x + v.x, x.y, x.z + v.z)
+            },
+            3 => AABB {
+                mins: P::new(n.x, n.y - v.y, n.z - v.z),
+                maxs: P::new(x.x + v.x, x.y, x.z)
+            },
+            4 => AABB {
+                mins: P::new(n.x - v.x, n.y, n.z),
+                maxs: P::new(x.x, x.y + v.y, x.z + v.z)
+            },
+            5 => AABB {
+                mins: P::new(n.x - v.x, n.y, n.z - v.z),
+                maxs: P::new(x.x, x.y + v.y, x.z)
+            },
+            6 => AABB {
+                mins: P::new(n.x - v.x, n.y - v.y, n.z),
+                maxs: P::new(x.x, x.y, x.z + v.z)
+            },
+            7 => AABB {
+                mins: n - v,
+                maxs: *x
+            },
+            _ => unreachable!()
+        }
+    }
+
+    /// Construct an [AABB] by taking an octant from an existing [AABB].
     pub fn sub_aabb(self, bb: &AABB) -> AABB {
         use parry3d::math::Point as P;
         let c = bb.center();

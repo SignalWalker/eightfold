@@ -1,5 +1,4 @@
-//! Octree rewrite partially inspired by parry's QBVH type (that one partitions space into
-//! multiples of 4 rather than 8, though)
+#![doc = include_str!("../README.md")]
 #![cfg_attr(not(debug_assertions), warn(missing_docs))]
 
 mod geom;

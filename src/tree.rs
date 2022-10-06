@@ -25,8 +25,24 @@ use parking_lot::RwLock;
 
 // TODO :: convert to trait alias once https://github.com/rust-lang/rfcs/pull/1733 is stabilized
 /// Trait alias for types which can act as indices within an [Octree].
-pub trait TreeIndex: PrimInt + AsPrimitive<usize> + AsPrimitive<u8> + Shl<Self, Output = Self> + std::fmt::Debug + 'static {}
-impl<P> TreeIndex for P where P: PrimInt + AsPrimitive<usize> + AsPrimitive<u8> + Shl<Self, Output = Self> + std::fmt::Debug + 'static {}
+pub trait TreeIndex:
+    PrimInt
+    + AsPrimitive<usize>
+    + AsPrimitive<u8>
+    + Shl<Self, Output = Self>
+    + std::fmt::Debug
+    + 'static
+{
+}
+impl<P> TreeIndex for P where
+    P: PrimInt
+        + AsPrimitive<usize>
+        + AsPrimitive<u8>
+        + Shl<Self, Output = Self>
+        + std::fmt::Debug
+        + 'static
+{
+}
 
 /// A data structure for partitioning data in a 3D space.
 #[derive(Debug)]
@@ -218,7 +234,9 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         usize: AsPrimitive<Idx>,
     {
         let old_root = self.root;
-        self.height_cache.write().map(|h| h + Idx::one());
+        if let Some(h) = self.height_cache.write().as_mut() {
+            *h = *h + Idx::one();
+        }
 
         self.proxies.reserve(8);
         let mut children: Vec<Idx> = self
@@ -406,7 +424,10 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         self.leaf_data.iter()
     }
 
-    pub fn node_point_of_unchecked(&self, mut index: Idx) -> NodePoint<Idx> where u8: AsPrimitive<Idx> {
+    pub fn node_point_of_unchecked(&self, mut index: Idx) -> NodePoint<Idx>
+    where
+        u8: AsPrimitive<Idx>,
+    {
         let mut x = Idx::zero();
         let mut y = Idx::zero();
         let mut z = Idx::zero();
@@ -416,12 +437,18 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
             d = d + Idx::one();
             match self.proxies[p.parent.as_()].data {
                 ProxyData::Branch(b_idx) => {
-                    let oct = Octant(self.branch_data[b_idx.as_()].into_iter().find(|&c| c == index).unwrap().as_());
+                    let oct = Octant(
+                        self.branch_data[b_idx.as_()]
+                            .into_iter()
+                            .find(|&c| c == index)
+                            .unwrap()
+                            .as_(),
+                    );
                     x = x + oct.i().as_();
                     y = y + oct.j().as_();
                     z = z + oct.k().as_();
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
             index = p.parent;
             p = self.proxies[index.as_()];
@@ -430,8 +457,13 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
     }
 
     /// Calculate the [NodePoint] of a specific node.
-    pub fn node_point_of(&self, index: Idx) -> Result<NodePoint<Idx>, Error<Idx>> where u8: AsPrimitive<Idx> {
-        if !self.proxies.is_init(index.as_()) { return Err(Error::InvalidIndex(index)); }
+    pub fn node_point_of(&self, index: Idx) -> Result<NodePoint<Idx>, Error<Idx>>
+    where
+        u8: AsPrimitive<Idx>,
+    {
+        if !self.proxies.is_init(index.as_()) {
+            return Err(Error::InvalidIndex(index));
+        }
         Ok(self.node_point_of_unchecked(index))
     }
 

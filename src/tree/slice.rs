@@ -1,7 +1,7 @@
 use num_traits::AsPrimitive;
 use parking_lot::RwLock;
 
-use crate::{Error, Octree, TreeIndex, ProxyData, LeafIter, Octant, NodePoint};
+use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData, TreeIndex};
 
 /// A slice representing a subset of an [Octree].
 #[derive(Debug, Clone, Copy)]
@@ -9,7 +9,7 @@ pub struct TreeSlice<'tree, T, Idx: TreeIndex> {
     tree: &'tree Octree<T, Idx>,
     root: Idx,
     depth: Idx,
-    height: Idx
+    height: Idx,
 }
 
 impl<T, Idx: TreeIndex> Octree<T, Idx> {
@@ -21,18 +21,29 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                 tree: self,
                 root: index,
                 depth: self.depth_of_unchecked(index),
-                height: if index == self.root { self.height() } else { self.height_from(index) },
+                height: if index == self.root {
+                    self.height()
+                } else {
+                    self.height_from(index)
+                },
             })
         }
     }
 
     pub fn as_slice(&self) -> TreeSlice<T, Idx> {
-        TreeSlice { tree: self, root: self.root, depth: Idx::zero(), height: self.height() }
+        TreeSlice {
+            tree: self,
+            root: self.root,
+            depth: Idx::zero(),
+            height: self.height(),
+        }
     }
 }
 
 impl<'tree, T, Idx: TreeIndex> TreeSlice<'tree, T, Idx> {
-    pub fn base(&self) -> &'tree Octree<T, Idx> { self.tree }
+    pub fn base(&self) -> &'tree Octree<T, Idx> {
+        self.tree
+    }
 }
 
 /// Trait for [Octree] references.
@@ -42,17 +53,23 @@ pub trait OctreeSlice<T, Idx: TreeIndex> {
     /// The height of a subtree, originating at a specific node.
     fn height_from(&self, index: Idx) -> Idx;
     /// The height of the tree calculated from the root.
-    fn height(&self) -> Idx { self.height_from(self.root_idx()) }
+    fn height(&self) -> Idx {
+        self.height_from(self.root_idx())
+    }
     /// The dimensions of the cubical voxel grid represented by this tree, as determined by the
     /// tree's height.
-    fn grid_size(&self) -> Idx { Idx::one() << self.height() }
+    fn grid_size(&self) -> Idx {
+        Idx::one() << self.height()
+    }
     /// Depth-first iterator through all leafs, from deepest to shallowest & nearest to farthest
     /// (by [Octant] ordering).
     fn leaf_dfi(&self) -> LeafIter<T, Idx>;
 }
 
 impl<T, Idx: TreeIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
-    fn root_idx(&self) -> Idx { self.root }
+    fn root_idx(&self) -> Idx {
+        self.root
+    }
 
     fn height_from(&self, index: Idx) -> Idx {
         let mut max_depth = Idx::zero();
@@ -112,12 +129,19 @@ impl<T, Idx: TreeIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
     }
 }
 
-impl<'tree, T, Idx: TreeIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx> where u8: AsPrimitive<Idx> {
-    fn root_idx(&self) -> Idx { self.root }
+impl<'tree, T, Idx: TreeIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx>
+where
+    u8: AsPrimitive<Idx>,
+{
+    fn root_idx(&self) -> Idx {
+        self.root
+    }
     fn height_from(&self, index: Idx) -> Idx {
         self.tree.height_from(index)
     }
-    fn height(&self) -> Idx { self.height }
+    fn height(&self) -> Idx {
+        self.height
+    }
     fn leaf_dfi(&self) -> LeafIter<T, Idx> {
         LeafIter {
             tree: self.tree,
@@ -125,8 +149,8 @@ impl<'tree, T, Idx: TreeIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx> 
             curr_node: Some((
                 &self.tree.proxies[self.root.as_()],
                 Octant(0),
-                self.tree.node_point_of_unchecked(self.root)
-            ))
+                self.tree.node_point_of_unchecked(self.root),
+            )),
         }
     }
 }
