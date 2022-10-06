@@ -1,13 +1,14 @@
 [package]
 name = "eightfold"
-description = "3D space partitioning library"
-authors = ["Ash Walker <ash@ashwalker.net>"]
-repository = "https://github.com/SignalWalker/eightfold"
-keywords = [ "gamedev", "graphics" ]
-license = "LGPL-3.0-or-later"
-
 version = "0.1.0"
+authors = ["Ash Walker <ash@ashwalker.net>"]
 edition = "2021"
+
+description = "3D space partitioning library"
+readme = true
+repository = "https://github.com/SignalWalker/eightfold"
+keywords = [ "gamedev", "graphics", "octree" ]
+license = "LGPL-3.0-or-later"
 
 [dependencies]
 nalgebra = "^0.31"
