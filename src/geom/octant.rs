@@ -1,8 +1,9 @@
 use std::ops::Add;
 
-use nalgebra::Vector3;
+use nalgebra::{ClosedAdd, Vector3};
+use num_traits::AsPrimitive;
 
-use crate::NodePoint;
+use crate::{NodePoint, TreeIndex};
 
 /// A way to refer to octants in a 3D volume.
 ///
@@ -65,32 +66,35 @@ impl From<Octant> for u8 {
     }
 }
 
-impl Add<Octant> for &NodePoint {
-    type Output = NodePoint;
+impl<Idx: TreeIndex + From<u8> + ClosedAdd> Add<Octant> for &NodePoint<Idx> {
+    type Output = NodePoint<Idx>;
 
     /// Get the NodePoint of an octant of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         NodePoint::new(
-            self.0.x + o.i() as u32,
-            self.0.y + o.j() as u32,
-            self.0.z + o.k() as u32,
-            self.0.w + 1,
+            self.0.x + o.i().into(),
+            self.0.y + o.j().into(),
+            self.0.z + o.k().into(),
+            self.0.w + 1u8.into(),
         )
     }
 }
 
-impl Add<Octant> for NodePoint {
-    type Output = NodePoint;
+impl<Idx: TreeIndex> Add<Octant> for NodePoint<Idx>
+where
+    u8: AsPrimitive<Idx>,
+{
+    type Output = NodePoint<Idx>;
 
     /// Get the NodePoint of an octant of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         Self::new(
-            self.0.x + o.i() as u32,
-            self.0.y + o.j() as u32,
-            self.0.z + o.k() as u32,
-            self.0.w + 1,
+            self.0.x + o.i().as_(),
+            self.0.y + o.j().as_(),
+            self.0.z + o.k().as_(),
+            self.0.w + Idx::one(),
         )
     }
 }

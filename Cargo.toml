@@ -10,25 +10,41 @@ edition = "2021"
 
 [dependencies]
 nalgebra = "^0.31"
+num-traits = "^0.2"
 # lazy_static = "^1.4"
 thiserror = "^1.0"
 # rayon = "^1.5"
 # num_cpus = "^1.13"
 parking_lot = "^0.12"
+# static_assertions = "^1.1"
 
-tracing = "^0.1"
+# stablevec
+bitvec = "^1.0"
 
-parry3d = { optional = true, version = "^0.9" }
+# tracing
+tracing = { optional = true, version = "^0.1" }
+
+# spatial
+parry3d = { optional = true, version = "^0.10" }
+
+# mesh
+
+# render
 
 [dev-dependencies]
-clap = { version = "^3.2", features = [ "derive", "env" ] }
+clap = { version = "^4.0", features = [ "derive", "env" ] }
 tobj = { version = "^3.2", features = [ "merging", "reordering" ] }
 tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
 time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
+wgpu = { version = "^0.13" }
 
 [features]
 default = []
 spatial = [ "dep:parry3d" ]
+mesh = [ "spatial" ]
+render = [ "mesh" ]
+tracing = [ "dep:tracing" ]
 
 [[example]]
 name = "voxelize"
+required-features = [ "tracing", "render", ]
