@@ -11,6 +11,8 @@ pub mod render;
 pub mod spatial;
 mod tree;
 
+#[cfg(feature = "mesh")]
+pub use hedron;
 pub use stablevec as vec;
 
 use nalgebra::{Point3, Point4};
