@@ -20,7 +20,9 @@ pub use proxy::*;
 pub use sample::*;
 pub use slice::*;
 
-use crate::{stablevec, vec::StableVec, NodePoint, Octant, VoxelPoint};
+use crate::{vec::StableVec, NodePoint, Octant, VoxelPoint};
+
+use stablevec::stablevec;
 
 // TODO :: convert to trait alias once https://github.com/rust-lang/rfcs/pull/1733 is stabilized
 /// Trait alias for types which can act as indices within an [Octree].
@@ -140,19 +142,19 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         let mut res = Vec::with_capacity(8);
         let mut to_remove = unsafe {
             self.branch_data
-                .remove_at_unchecked(children_idx.as_())
+                .remove_unchecked(children_idx.as_())
                 .unwrap()
                 .to_vec()
         };
         while let Some(c_idx) = to_remove.pop() {
-            match unsafe { self.proxies.remove_at_unchecked(c_idx.as_()).unwrap().data } {
+            match unsafe { self.proxies.remove_unchecked(c_idx.as_()).unwrap().data } {
                 ProxyData::Void => {}
                 ProxyData::Leaf(t) => {
-                    res.push(unsafe { self.leaf_data.remove_at_unchecked(t.as_()).unwrap() })
+                    res.push(unsafe { self.leaf_data.remove_unchecked(t.as_()).unwrap() })
                 }
                 ProxyData::Branch(c_idx) => {
                     to_remove.extend_from_slice(unsafe {
-                        &self.branch_data.remove_at_unchecked(c_idx.as_()).unwrap()
+                        &self.branch_data.remove_unchecked(c_idx.as_()).unwrap()
                     });
                 }
             }
@@ -458,7 +460,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         usize: AsPrimitive<Idx>,
     {
         // remove other.root from other and replace `node` with it
-        let o_root = unsafe { other.proxies.remove_at_unchecked(other.root.as_()) }.unwrap();
+        let o_root = unsafe { other.proxies.remove_unchecked(other.root.as_()) }.unwrap();
         self.proxies[node.as_()].data = o_root.data;
 
         // insert all the new data into self, collecting swap index information

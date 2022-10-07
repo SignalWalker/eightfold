@@ -13,6 +13,9 @@ use std::{
 use bitvec::vec::BitVec;
 use num_traits::{AsPrimitive, PrimInt};
 
+// reexport so the macro works outside of this package
+pub use bitvec;
+
 /// Create a [StableVec] containing the arguments, as with `std::vec![]`.
 #[macro_export]
 macro_rules! stablevec {
@@ -21,9 +24,12 @@ macro_rules! stablevec {
     };
     ($elem:expr; $n:expr) => {
         unsafe {
-            $crate::vec::StableVec::from_parts(
+            $crate::StableVec::from_parts(
                 Vec::from_elem($elem, $n),
                 bitvec::vec::BitVec::repeat(true, $n),
+                $n,
+                $n,
+                if $n == 0 { None } else { Some($n) }
             )
         }
     };
@@ -31,9 +37,9 @@ macro_rules! stablevec {
         unsafe{
             let data = Box::new([$(std::mem::MaybeUninit::new($x)),+]);
             let cap = data.len();
-            $crate::vec::StableVec::from_parts(
+            $crate::StableVec::from_parts(
                 std::ptr::NonNull::new_unchecked(Box::leak(data) as *mut _),
-                bitvec::vec::BitVec::repeat(true, cap),
+                $crate::bitvec::vec::BitVec::repeat(true, cap),
                 cap,
                 cap,
                 Some(cap)
@@ -358,7 +364,10 @@ impl<T> StableVec<T> {
         unsafe { slice::from_raw_parts_mut(self.data.as_ptr().add(f_idx), self.cap - f_idx) }
     }
 
-    pub(crate) unsafe fn remove_at_unchecked(&mut self, index: usize) -> Option<T> {
+    /// # Safety
+    ///
+    /// * `index` < `self.cap`
+    pub unsafe fn remove_unchecked(&mut self, index: usize) -> Option<T> {
         if self.flags.replace_unchecked(index, false) {
             self.init_amt -= 1;
             if self.farthest_init == Some(index) {
@@ -407,7 +416,7 @@ impl<T> StableVec<T> {
         if index >= self.cap {
             return None;
         }
-        unsafe { self.remove_at_unchecked(index) }
+        unsafe { self.remove_unchecked(index) }
     }
 
     pub fn replace(&mut self, index: usize, data: T) -> Option<T> {

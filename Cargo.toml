@@ -13,15 +13,14 @@ keywords = [ "gamedev", "graphics", "octree" ]
 categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
 
 [workspace]
-members = [ "samples/*" ]
+members = [ "samples/*", "stablevec" ]
 
 [dependencies]
 nalgebra = "^0.31"
 num-traits = "^0.2"
 thiserror = "^1.0"
 
-# stablevec
-bitvec = "^1.0"
+stablevec = { path = "./stablevec" }
 
 # tracing
 tracing = { optional = true, version = "^0.1" }

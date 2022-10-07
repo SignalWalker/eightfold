@@ -10,7 +10,8 @@ pub mod render;
 #[cfg(feature = "spatial")]
 pub mod spatial;
 mod tree;
-pub mod vec;
+
+pub use stablevec as vec;
 
 use nalgebra::{Point3, Point4};
 // pub mod slice;

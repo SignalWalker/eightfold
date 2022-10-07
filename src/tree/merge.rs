@@ -12,8 +12,8 @@ impl<T: LeafMerge, Idx: TreeIndex> Octree<T, Idx> {
     fn internal_merge_branch(&mut self, children_idx: Idx) -> Option<T> {
         debug_assert!(self.branch_data.is_init(children_idx.as_()));
         let mut res: Option<T> = None;
-        for c in unsafe { self.branch_data.remove_at_unchecked(children_idx.as_()) }.unwrap() {
-            match unsafe { self.proxies.remove_at_unchecked(c.as_()) }
+        for c in unsafe { self.branch_data.remove_unchecked(children_idx.as_()) }.unwrap() {
+            match unsafe { self.proxies.remove_unchecked(c.as_()) }
                 .unwrap()
                 .data
             {
@@ -22,13 +22,11 @@ impl<T: LeafMerge, Idx: TreeIndex> Octree<T, Idx> {
                     Some(r) => {
                         res = Some(T::leaf_merge(
                             r,
-                            unsafe { self.leaf_data.remove_at_unchecked(l_idx.as_()) }.unwrap(),
+                            unsafe { self.leaf_data.remove_unchecked(l_idx.as_()) }.unwrap(),
                         ))
                     }
                     None => {
-                        res = Some(
-                            unsafe { self.leaf_data.remove_at_unchecked(l_idx.as_()) }.unwrap(),
-                        )
+                        res = Some(unsafe { self.leaf_data.remove_unchecked(l_idx.as_()) }.unwrap())
                     }
                 },
                 ProxyData::Branch(b_idx) => {
