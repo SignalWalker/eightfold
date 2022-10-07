@@ -32,11 +32,11 @@ parry3d = { optional = true, version = "^0.10" }
 # render
 
 [dev-dependencies]
-clap = { version = "^4.0", features = [ "derive", "env" ] }
-tobj = { version = "^3.2", features = [ "reordering" ] }
-tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
-time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
-wgpu = { version = "^0.14" }
+# clap = { version = "^4.0", features = [ "derive", "env" ] }
+# tobj = { version = "^3.2", features = [ "reordering" ] }
+# tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
+# time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
+# wgpu = { version = "^0.14" }
 
 [features]
 default = []
@@ -47,4 +47,21 @@ tracing = [ "dep:tracing" ]
 
 [[example]]
 name = "voxelize"
-required-features = [ "tracing", "render", ]
+required-features = [ "tracing", "render" ]
+
+# some specific configuration for CI builds so they go faster / have better caching
+[profile.ci]
+inherits = "dev"
+opt-level = 0
+debug = 0
+strip = "symbols"
+debug-assertions = true # so that tests are subject to debug asserts
+overflow-checks = true # as above
+lto = "off"
+panic = 'unwind'
+incremental = false
+codegen-units = 16
+rpath = false
+
+[profile.ci.package."*"]
+debug = 0
