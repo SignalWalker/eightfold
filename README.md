@@ -9,6 +9,8 @@
 
 A library for spatial partitioning of 3D data. Built with [nalgebra](https://nalgebra.org).
 
+Not yet fit for actual use; wait until [1.0.0](https://github.com/SignalWalker/eightfold/issues/1).
+
 ## Feature Flags
 
 * `spatial` :: [Octree] wrappers with a defined transformation outside of their internal space.
