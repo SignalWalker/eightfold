@@ -10,11 +10,13 @@ on:
       - '.github/workflows/rust.yml'
       - '**/*.rs'
       - '**/Cargo.toml'
+      - '**/Cargo.lock'
   pull_request:
     paths:
       - '.github/workflows/rust.yml'
       - '**/*.rs'
       - '**/Cargo.toml'
+      - '**/Cargo.lock'
 
 env:
   CARGO_NET_RETRY: 10
@@ -54,14 +56,14 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --no-deps --profile ci -- -W missing_docs
+          args: --all-features --no-deps --profile ci --workspace -- -W missing_docs
       - name: Compile
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-run --profile ci
+          args: --all-features --no-run --profile ci --workspace
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --profile ci --quiet
+          args: --all-features --profile ci --workspace --quiet

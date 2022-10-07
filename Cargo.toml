@@ -12,6 +12,9 @@ license = "LGPL-3.0-or-later"
 keywords = [ "gamedev", "graphics", "octree" ]
 categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
 
+[workspace]
+members = [ "samples/*" ]
+
 [dependencies]
 nalgebra = "^0.31"
 num-traits = "^0.2"
@@ -30,23 +33,12 @@ parry3d = { optional = true, version = "^0.10" }
 
 # render
 
-[dev-dependencies]
-# clap = { version = "^4.0", features = [ "derive", "env" ] }
-# tobj = { version = "^3.2", features = [ "reordering" ] }
-# tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
-# time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
-# wgpu = { version = "^0.14" }
-
 [features]
 default = []
 spatial = [ "dep:parry3d" ]
 mesh = [ "spatial" ]
 render = [ "mesh" ]
 tracing = [ "dep:tracing" ]
-
-[[example]]
-name = "voxelize"
-required-features = [ "tracing", "render" ]
 
 # some specific configuration for CI builds so they go faster / have better caching
 [profile.ci]

@@ -1,0 +1,16 @@
+[package]
+name = "voxelize"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eightfold = { path = "../..", features = [ "render", "tracing" ] }
+
+tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
+time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
+
+clap = { version = "^4.0", features = [ "derive", "env" ] }
+
+wgpu = { version = "^0.14" }
+
+tobj = { version = "^3.2", features = [ "reordering" ] }
