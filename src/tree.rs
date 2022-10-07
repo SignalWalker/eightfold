@@ -21,7 +21,6 @@ pub use sample::*;
 pub use slice::*;
 
 use crate::{stablevec, vec::StableVec, NodePoint, Octant, VoxelPoint};
-use parking_lot::RwLock;
 
 // TODO :: convert to trait alias once https://github.com/rust-lang/rfcs/pull/1733 is stabilized
 /// Trait alias for types which can act as indices within an [Octree].
@@ -51,20 +50,7 @@ pub struct Octree<T, Idx: TreeIndex> {
     branch_data: StableVec<[Idx; 8]>,
     leaf_data: StableVec<T>,
     root: Idx,
-    height_cache: RwLock<Option<Idx>>,
 }
-
-// impl<T: Clone, Idx: TreeIndex> Clone for Octree<T, Idx> {
-//     fn clone(&self) -> Self {
-//         Self {
-//             proxies: self.proxies.clone(),
-//             branch_data: self.branch_data.clone(),
-//             leaf_data: self.leaf_data.clone(),
-//             root: self.root,
-//             height_cache: RwLock::new(*self.height_cache.read()),
-//         }
-//     }
-// }
 
 impl<T, Idx: TreeIndex> Default for Octree<T, Idx> {
     fn default() -> Self {
@@ -73,11 +59,6 @@ impl<T, Idx: TreeIndex> Default for Octree<T, Idx> {
 }
 
 impl<T, Idx: TreeIndex> Octree<T, Idx> {
-    /// The maximum grid size representable by this Octree
-    pub fn max_grid_size() -> Idx {
-        Idx::max_value()
-    }
-
     /// Construct a new tree with a void root.
     pub fn new() -> Self {
         Self {
@@ -88,7 +69,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
             branch_data: StableVec::default(),
             leaf_data: StableVec::default(),
             root: Idx::zero(),
-            height_cache: Default::default(),
         }
     }
 
@@ -144,11 +124,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                     .unwrap();
                 let c_index = self.branch_data.push(children);
                 self.proxies[target.as_()].data = ProxyData::Branch(c_index.as_());
-                // TODO :: more efficient way to keep track of tree height
-                if let Some(height) = *self.height_cache.read() {
-                    let pdepth = self.depth_of_unchecked(target);
-                    self.height_cache.write().replace(height.max(pdepth));
-                }
                 Ok(&self.branch_data[c_index])
             }
         }
@@ -160,7 +135,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         children_idx: Idx,
         new_data: ProxyData<Idx>,
     ) -> Vec<T> {
-        self.height_cache.write().take();
         self.proxies[target.as_()].data = new_data;
 
         let mut res = Vec::with_capacity(8);
@@ -234,9 +208,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         usize: AsPrimitive<Idx>,
     {
         let old_root = self.root;
-        if let Some(h) = self.height_cache.write().as_mut() {
-            *h = *h + Idx::one();
-        }
 
         self.proxies.reserve(8);
         let mut children: Vec<Idx> = self
@@ -266,7 +237,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         Ok(self.root)
     }
 
-    /// Code shared by [at] and [at_unchecked]
+    /// Code shared by [voxel_at] and [voxel_at_unchecked]
     fn internal_voxel_at(&self, p: &VoxelPoint<Idx>, size: Idx) -> Idx
     where
         Idx: Shr<u8, Output = Idx> + ShrAssign<u8> + PartialOrd + From<u8>,
@@ -286,6 +257,9 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
 
     /// Get the index of the deepest voxel encompassing a specific [VoxelPoint].
     ///
+    /// *Warning*: this requires knowing the height of the tree, which can be an expensive
+    /// calculation.
+    ///
     /// # Panics
     /// * `p` ∉ 0..`self.grid_size()`
     pub fn voxel_at_unchecked(&self, p: &VoxelPoint<Idx>) -> Idx
@@ -296,6 +270,9 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
     }
 
     /// Get the index of the deepest voxel encompassing a specific [VoxelPoint].
+    ///
+    /// *Warning*: this requires knowing the height of the tree, which can be an expensive
+    /// calculation.
     ///
     /// # Errors
     /// * `p` ∉ 0..`self.grid_size()`
@@ -369,7 +346,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                 .collect(),
             leaf_data: self.leaf_data,
             root: self.root.as_(),
-            height_cache: RwLock::new(self.height_cache.read().map(|h| h.as_())),
         }
     }
 
@@ -424,6 +400,11 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         self.leaf_data.iter()
     }
 
+    /// Calculate the [NodePoint] of a specific node.
+    ///
+    /// # Panics
+    ///
+    /// * `index` ∉ `self.proxies`
     pub fn node_point_of_unchecked(&self, mut index: Idx) -> NodePoint<Idx>
     where
         u8: AsPrimitive<Idx>,
@@ -487,15 +468,9 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         // ensure the old root is properly handled, because we took it from `other` earlier
         p_swaps.insert(other.root.as_(), node.as_());
 
-        // might as well calculate depth here, too, since we're doing a depth recursion anyway
-        let mut max_depth = self.depth_of_unchecked(node);
-        let mut node_stack = vec![(node.as_(), self.proxies[node.as_()], max_depth)];
+        let mut node_stack = vec![(node.as_(), self.proxies[node.as_()])];
 
-        while let Some((i, p, d)) = node_stack.pop() {
-            // update max_depth
-            if d > max_depth {
-                max_depth = d;
-            }
+        while let Some((i, p)) = node_stack.pop() {
             // replace p.parent, unless p == `node` (which already has the correct parent)
             if i != node.as_() {
                 self.proxies[i].parent = p_swaps[&p.parent.as_()].as_();
@@ -515,20 +490,12 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                         // update child index in children
                         *c = p_swaps[&ci].as_();
                         // add child to the update queue
-                        node_stack.push((ci, self.proxies[ci], d + Idx::one()));
+                        node_stack.push((ci, self.proxies[ci]));
                     }
                     // replace old children index with new children index
                     self.proxies[i].data = ProxyData::Branch(c_idx.as_());
                 }
             }
-        }
-
-        // update the height cache
-        let mut h_cache = self.height_cache.write();
-        // we only know whether we've actually found the deepest node if height_cache already has a
-        // value
-        if let Some(h) = *h_cache {
-            *h_cache = Some(h.max(max_depth))
         }
     }
 

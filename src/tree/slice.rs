@@ -7,7 +7,6 @@ use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData, TreeIndex};
 pub struct TreeSlice<'tree, T, Idx: TreeIndex> {
     tree: &'tree Octree<T, Idx>,
     root: Idx,
-    height: Idx,
 }
 
 impl<T, Idx: TreeIndex> Octree<T, Idx> {
@@ -18,11 +17,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
             Ok(TreeSlice {
                 tree: self,
                 root: index,
-                height: if index == self.root {
-                    self.height()
-                } else {
-                    self.height_from(index)
-                },
             })
         }
     }
@@ -31,7 +25,6 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
         TreeSlice {
             tree: self,
             root: self.root,
-            height: self.height(),
         }
     }
 }
@@ -85,33 +78,6 @@ impl<T, Idx: TreeIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
         max_depth
     }
 
-    /// The number of divisions within this octree.
-    ///
-    /// This can be used to determine the dimensions of the voxel grid represented by the tree.
-    ///
-    /// # Examples
-    ///
-    /// If `self` consists only of one node (the root), its height is 0.
-    /// If the root is a branch, and each child of the root is a leaf (or void), then the tree's height is 1.
-    /// If the root branch has a terminal child branch, the tree's height is 2.
-    fn height(&self) -> Idx {
-        match *self.height_cache.read() {
-            Some(h) => h,
-            None => {
-                let mut height_cache = self.height_cache.write();
-                if let Some(h) = *height_cache {
-                    return h;
-                } // another thread calculated this
-                  // before this one could get a lock
-                #[cfg(feature = "tracing")]
-                tracing::trace!("Recalculating tree height...");
-                let height = self.height_from(self.root);
-                height_cache.replace(height);
-                height
-            }
-        }
-    }
-
     fn leaf_dfi(&self) -> LeafIter<T, Idx> {
         LeafIter {
             tree: self,
@@ -134,9 +100,6 @@ where
     }
     fn height_from(&self, index: Idx) -> Idx {
         self.tree.height_from(index)
-    }
-    fn height(&self) -> Idx {
-        self.height
     }
     fn leaf_dfi(&self) -> LeafIter<T, Idx> {
         LeafIter {
