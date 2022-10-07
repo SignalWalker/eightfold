@@ -25,11 +25,10 @@ pub type VoxelPoint<Idx> = Point3<Idx>;
 ///
 /// In voxel terms, a NodePoint is a point `XYZ` within a voxel grid of size `2ᴰ`.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-pub struct NodePoint<Idx: TreeIndex>(Point4<Idx>);
+pub struct NodePoint<Idx: TreeIndex>(pub Point4<Idx>);
 
 impl<Idx: TreeIndex> NodePoint<Idx> {
-    #[inline]
-    pub fn new(x: Idx, y: Idx, z: Idx, d: Idx) -> Self {
-        Self(Point4::new(x, y, z, d))
+    pub const fn new(x: Idx, y: Idx, z: Idx, d: Idx) -> Self {
+        Self(nalgebra::point![x, y, z, d])
     }
 }
