@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(debug_assertions), warn(missing_docs))]
+#![warn(unreachable_pub)]
 
 mod geom;
 #[cfg(feature = "mesh")]
