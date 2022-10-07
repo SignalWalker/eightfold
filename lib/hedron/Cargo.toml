@@ -1,0 +1,17 @@
+[package]
+name = "hedron"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+# gltf
+gltf = { optional = true, version = "^1.0", features = [] }
+
+# obj
+tobj = { optional = true, version = "^3.2", features = [] }
+
+[features]
+default = []
+obj = [ "dep:tobj" ]
+gltf = [ "dep:gltf" ]

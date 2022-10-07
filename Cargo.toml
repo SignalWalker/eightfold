@@ -13,14 +13,14 @@ keywords = [ "gamedev", "graphics", "octree" ]
 categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
 
 [workspace]
-members = [ "samples/*", "stablevec" ]
+members = [ "samples/*", "lib/*" ]
 
 [dependencies]
 nalgebra = "^0.31"
 num-traits = "^0.2"
 thiserror = "^1.0"
 
-stablevec = { path = "./stablevec" }
+stablevec = { path = "./lib/stablevec" }
 
 # tracing
 tracing = { optional = true, version = "^0.1" }
@@ -29,13 +29,14 @@ tracing = { optional = true, version = "^0.1" }
 parry3d = { optional = true, version = "^0.10" }
 
 # mesh
+hedron = { optional = true, path = "./lib/hedron" }
 
 # render
 
 [features]
 default = []
 spatial = [ "dep:parry3d" ]
-mesh = [ "spatial" ]
+mesh = [ "spatial", "dep:hedron" ]
 render = [ "mesh" ]
 tracing = [ "dep:tracing" ]
 

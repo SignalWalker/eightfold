@@ -24,6 +24,7 @@ Not yet fit for actual use; wait until [1.0.0](https://github.com/SignalWalker/e
 ## See Also
 
 * [1.0.0 Checklist](https://github.com/SignalWalker/eightfold/issues/1)
+* [Subprojects](./lib)
 
 ## References
 
