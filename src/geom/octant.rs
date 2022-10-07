@@ -29,14 +29,14 @@ impl Octant {
     /// Array of all possible Octants.
     pub const fn all() -> [Self; 8] {
         [
-            Octant(0),
-            Octant(1),
-            Octant(2),
-            Octant(3),
-            Octant(4),
-            Octant(5),
-            Octant(6),
-            Octant(7),
+            Octant(0), // 000
+            Octant(1), // 001
+            Octant(2), // 010
+            Octant(3), // 011
+            Octant(4), // 100
+            Octant(5), // 101
+            Octant(6), // 110
+            Octant(7), // 111
         ]
     }
 
@@ -79,17 +79,26 @@ impl From<Octant> for u8 {
     }
 }
 
-impl<Idx: TreeIndex + From<u8> + ClosedAdd> Add<Octant> for &NodePoint<Idx> {
+macro_rules! np_add_impl {
+    ($np:ident, $o:ident) => {
+        NodePoint::new(
+            $np.0.x + $o.i().as_(),
+            $np.0.y + $o.j().as_(),
+            $np.0.z + $o.k().as_(),
+            $np.0.w + Idx::one(),
+        )
+    };
+}
+
+impl<Idx: TreeIndex + ClosedAdd> Add<Octant> for &NodePoint<Idx>
+where
+    u8: AsPrimitive<Idx>,
+{
     type Output = NodePoint<Idx>;
 
     /// Get the [NodePoint] of an [Octant] of self
     fn add(self, o: Octant) -> Self::Output {
-        NodePoint::new(
-            self.0.x + o.i().into(),
-            self.0.y + o.j().into(),
-            self.0.z + o.k().into(),
-            self.0.w + 1u8.into(),
-        )
+        np_add_impl!(self, o)
     }
 }
 
@@ -101,21 +110,6 @@ where
 
     /// Get the [NodePoint] of an [Octant] of self
     fn add(self, o: Octant) -> Self::Output {
-        NodePoint::new(
-            self.0.x + o.i().as_(),
-            self.0.y + o.j().as_(),
-            self.0.z + o.k().as_(),
-            self.0.w + Idx::one(),
-        )
+        np_add_impl!(self, o)
     }
 }
-
-// impl From<Octant> for GridVector {
-//     fn from(o: Octant) -> Self {
-//         Self::new(
-//             (o.0 & 0b100) as u32,
-//             (o.0 & 0b010) as u32,
-//             (o.0 & 0b001) as u32,
-//         )
-//     }
-// }
