@@ -26,9 +26,18 @@ use crate::{NodePoint, TreeIndex};
 pub struct Octant(pub u8);
 
 impl Octant {
-    /// Iterator through all possible octants
-    pub fn all() -> impl Iterator<Item = Self> {
-        (0..8).into_iter().map(Self)
+    /// Array of all possible Octants.
+    pub const fn all() -> [Self; 8] {
+        [
+            Octant(0),
+            Octant(1),
+            Octant(2),
+            Octant(3),
+            Octant(4),
+            Octant(5),
+            Octant(6),
+            Octant(7),
+        ]
     }
 
     /// Construct an Octant from coordinates.
