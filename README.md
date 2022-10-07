@@ -15,6 +15,10 @@ A library for spatial partitioning of 3D data. Built with [nalgebra](https://nal
 * `render` :: Utilities for rendering an [Octree] with a GPU.
 * `tracing` :: Emit trace events using [tracing](https://github.com/tokio-rs/tracing).
 
+## Usage
+
+* [Examples](./samples)
+
 ## See Also
 
 * [1.0.0 Checklist](https://github.com/SignalWalker/eightfold/issues/1)
