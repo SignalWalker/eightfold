@@ -21,7 +21,6 @@ env:
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
-  RUSTFLAGS: "-W unreachable-pub"
 
 jobs:
   rust:
