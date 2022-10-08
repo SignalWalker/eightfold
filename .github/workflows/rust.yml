@@ -56,14 +56,14 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --no-deps --profile ci --workspace -- -W missing_docs
+          args: --all-features --all-targets --profile ci --workspace --no-deps  -- -W missing_docs
       - name: Compile
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-run --profile ci --workspace
+          args: --all-features --all-targets --profile ci --workspace --no-run
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --profile ci --workspace --quiet
+          args: --all-features --all-targets --profile ci --workspace --quiet

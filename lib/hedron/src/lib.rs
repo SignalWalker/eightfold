@@ -2,8 +2,5 @@
 
 pub mod de;
 
-mod vert;
-pub use vert::*;
-
-mod mesh;
-pub use mesh::*;
+mod data;
+pub use data::*;

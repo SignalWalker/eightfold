@@ -1,9 +1,10 @@
 use std::ops::Add;
 
-use nalgebra::{ClosedAdd, Vector3};
+use eightfold_common::ArrayIndex;
+use nalgebra::Vector3;
 use num_traits::AsPrimitive;
 
-use crate::{NodePoint, TreeIndex};
+use crate::NodePoint;
 
 /// A way to refer to octants in a 3D volume.
 ///
@@ -27,22 +28,20 @@ pub struct Octant(pub u8);
 
 impl Octant {
     /// Array of all possible Octants.
-    pub const fn all() -> [Self; 8] {
-        [
-            Octant(0), // 000
-            Octant(1), // 001
-            Octant(2), // 010
-            Octant(3), // 011
-            Octant(4), // 100
-            Octant(5), // 101
-            Octant(6), // 110
-            Octant(7), // 111
-        ]
-    }
+    pub const ALL: [Self; 8] = [
+        Octant(0),
+        Octant(1),
+        Octant(2),
+        Octant(3),
+        Octant(4),
+        Octant(5),
+        Octant(6),
+        Octant(7),
+    ];
 
     /// Construct an Octant from coordinates.
     pub const fn new(i: bool, j: bool, k: bool) -> Self {
-        Self((i as u8 * 0b100) | (j as u8 * 0b010) | (k as u8))
+        Self(((i as u8) << 2) | ((j as u8) << 1) | (k as u8))
     }
 
     /// The `i` component of self.
@@ -90,7 +89,7 @@ macro_rules! np_add_impl {
     };
 }
 
-impl<Idx: TreeIndex + ClosedAdd> Add<Octant> for &NodePoint<Idx>
+impl<Idx: ArrayIndex> Add<Octant> for &NodePoint<Idx>
 where
     u8: AsPrimitive<Idx>,
 {
@@ -102,7 +101,7 @@ where
     }
 }
 
-impl<Idx: TreeIndex> Add<Octant> for NodePoint<Idx>
+impl<Idx: ArrayIndex> Add<Octant> for NodePoint<Idx>
 where
     u8: AsPrimitive<Idx>,
 {

@@ -11,11 +11,12 @@ use std::{
     ops::{Range, Shl, ShlAssign, Shr, ShrAssign},
 };
 
+use eightfold_common::ArrayIndex;
 pub use error::*;
 pub use iter::*;
 pub use merge::*;
 use nalgebra::ClosedMul;
-use num_traits::{AsPrimitive, PrimInt};
+use num_traits::AsPrimitive;
 pub use proxy::*;
 pub use sample::*;
 pub use slice::*;
@@ -24,43 +25,22 @@ use crate::{vec::StableVec, NodePoint, Octant, VoxelPoint};
 
 use stablevec::stablevec;
 
-// TODO :: convert to trait alias once https://github.com/rust-lang/rfcs/pull/1733 is stabilized
-/// Trait alias for types which can act as indices within an [Octree].
-pub trait TreeIndex:
-    PrimInt
-    + AsPrimitive<usize>
-    + AsPrimitive<u8>
-    + Shl<Self, Output = Self>
-    + std::fmt::Debug
-    + 'static
-{
-}
-impl<P> TreeIndex for P where
-    P: PrimInt
-        + AsPrimitive<usize>
-        + AsPrimitive<u8>
-        + Shl<Self, Output = Self>
-        + std::fmt::Debug
-        + 'static
-{
-}
-
 /// A data structure for partitioning data in a 3D space.
 #[derive(Debug)]
-pub struct Octree<T, Idx: TreeIndex> {
+pub struct Octree<T, Idx: ArrayIndex> {
     proxies: StableVec<Proxy<Idx>>,
     branch_data: StableVec<[Idx; 8]>,
     leaf_data: StableVec<T>,
     root: Idx,
 }
 
-impl<T, Idx: TreeIndex> Default for Octree<T, Idx> {
+impl<T, Idx: ArrayIndex> Default for Octree<T, Idx> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T, Idx: TreeIndex> Octree<T, Idx> {
+impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// Construct a new tree with a void root.
     pub fn new() -> Self {
         Self {
@@ -120,6 +100,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                         parent: target,
                         data: ProxyData::Void,
                     }))
+                    .map(|i| i.as_())
                     .collect::<Vec<_>>()
                     .as_slice()
                     .try_into()
@@ -221,6 +202,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
                 })
                 .take(7),
             )
+            .map(|i| i.as_())
             .collect::<Vec<Idx>>();
         children.insert(oct.0 as usize, old_root);
         self.root = self
@@ -320,7 +302,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
     }
 
     /// Convert this tree to one with a wider index type.
-    pub fn upcast<NIdx: TreeIndex>(mut self) -> Octree<T, NIdx>
+    pub fn upcast<NIdx: ArrayIndex>(mut self) -> Octree<T, NIdx>
     where
         usize: AsPrimitive<Idx>,
         Idx: AsPrimitive<NIdx>,
@@ -474,7 +456,7 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
 
         while let Some((i, p)) = node_stack.pop() {
             // replace p.parent, unless p == `node` (which already has the correct parent)
-            if i != node.as_() {
+            if i != AsPrimitive::<usize>::as_(node) {
                 self.proxies[i].parent = p_swaps[&p.parent.as_()].as_();
             }
             match p.data {

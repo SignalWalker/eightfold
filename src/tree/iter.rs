@@ -1,19 +1,20 @@
 use std::iter::FusedIterator;
 
+use eightfold_common::ArrayIndex;
 use num_traits::AsPrimitive;
 
-use crate::{NodePoint, Octant, Octree, Proxy, ProxyData, TreeIndex};
+use crate::{NodePoint, Octant, Octree, Proxy, ProxyData};
 
 /// A depth-first iterator over leafs in an [Octree].
-pub struct LeafIter<'tree, T, Idx: TreeIndex> {
+pub struct LeafIter<'tree, T, Idx: ArrayIndex> {
     pub(crate) tree: &'tree Octree<T, Idx>,
     pub(crate) node_stack: Vec<(&'tree Proxy<Idx>, Octant, NodePoint<Idx>)>,
     pub(crate) curr_node: Option<(&'tree Proxy<Idx>, Octant, NodePoint<Idx>)>,
 }
 
-impl<'tree, T, Idx: TreeIndex> FusedIterator for LeafIter<'tree, T, Idx> where u8: AsPrimitive<Idx> {}
+impl<'tree, T, Idx: ArrayIndex> FusedIterator for LeafIter<'tree, T, Idx> where u8: AsPrimitive<Idx> {}
 
-impl<'tree, T, Idx: TreeIndex> Iterator for LeafIter<'tree, T, Idx>
+impl<'tree, T, Idx: ArrayIndex> Iterator for LeafIter<'tree, T, Idx>
 where
     u8: AsPrimitive<Idx>,
 {

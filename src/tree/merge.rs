@@ -1,6 +1,7 @@
+use eightfold_common::ArrayIndex;
 use num_traits::AsPrimitive;
 
-use crate::{Error, Octree, ProxyData, TreeIndex};
+use crate::{Error, Octree, ProxyData};
 
 /// Define how to merge two leaves at the same depth into a single instance, to allow collapsing [Octree] branches.
 pub trait LeafMerge: Sized {
@@ -8,7 +9,7 @@ pub trait LeafMerge: Sized {
     fn leaf_merge(a: Self, b: Self) -> Self;
 }
 
-impl<T: LeafMerge, Idx: TreeIndex> Octree<T, Idx> {
+impl<T: LeafMerge, Idx: ArrayIndex> Octree<T, Idx> {
     fn internal_merge_branch(&mut self, children_idx: Idx) -> Option<T> {
         debug_assert!(self.branch_data.is_init(children_idx.as_()));
         let mut res: Option<T> = None;

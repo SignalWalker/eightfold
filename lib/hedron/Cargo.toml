@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+stablevec = { path = "../stablevec" }
+eightfold-common = { path = "../common" }
+
+num-traits = "^0.2"
 
 # gltf
 gltf = { optional = true, version = "^1.0", features = [] }

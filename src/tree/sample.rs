@@ -1,8 +1,9 @@
 use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 
+use eightfold_common::ArrayIndex;
 use nalgebra::ClosedMul;
 
-use crate::{Error, NodePoint, Octree, TreeIndex};
+use crate::{Error, NodePoint, Octree};
 
 /// Define a method for merging two leaf references into a single leaf, to allow sampling leaf data
 /// over an entire branch.
@@ -11,7 +12,7 @@ pub trait LeafSample {
     fn leaf_sample(a: &Self, b: &Self) -> Self;
 }
 
-impl<T: LeafSample + Clone, Idx: TreeIndex> Octree<T, Idx> {
+impl<T: LeafSample + Clone, Idx: ArrayIndex> Octree<T, Idx> {
     fn internal_sample_branch(&self, children_idx: Idx) -> Option<T> {
         let mut res = None;
         for c in self.branch_data[children_idx.as_()] {

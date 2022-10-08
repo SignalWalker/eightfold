@@ -15,6 +15,7 @@ mod tree;
 pub use hedron;
 pub use stablevec as vec;
 
+use eightfold_common::ArrayIndex;
 use nalgebra::{Point3, Point4};
 // pub mod slice;
 // pub mod view;
@@ -28,9 +29,9 @@ pub type VoxelPoint<Idx> = Point3<Idx>;
 ///
 /// In voxel terms, a NodePoint is a point `XYZ` within a voxel grid of size `2ᴰ`.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-pub struct NodePoint<Idx: TreeIndex>(pub Point4<Idx>);
+pub struct NodePoint<Idx: ArrayIndex>(pub Point4<Idx>);
 
-impl<Idx: TreeIndex> NodePoint<Idx> {
+impl<Idx: ArrayIndex> NodePoint<Idx> {
     pub const fn new(x: Idx, y: Idx, z: Idx, d: Idx) -> Self {
         Self(nalgebra::point![x, y, z, d])
     }

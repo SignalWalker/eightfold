@@ -1,8 +1,8 @@
-use crate::TreeIndex;
+use eightfold_common::ArrayIndex;
 
 /// Errors related to [Octrees](crate::Octree).
 #[derive(Debug, thiserror::Error)]
-pub enum Error<'data, Idx: TreeIndex> {
+pub enum Error<'data, Idx: ArrayIndex> {
     #[error("Attempted to access the parent of the root node")]
     NoParent,
     #[error("Child index out of range: 0..8 ∌ {0}")]

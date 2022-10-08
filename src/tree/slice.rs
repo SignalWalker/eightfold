@@ -1,15 +1,16 @@
+use eightfold_common::ArrayIndex;
 use num_traits::AsPrimitive;
 
-use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData, TreeIndex};
+use crate::{Error, LeafIter, NodePoint, Octant, Octree, ProxyData};
 
 /// A slice representing a subset of an [Octree].
 #[derive(Debug, Clone, Copy)]
-pub struct TreeSlice<'tree, T, Idx: TreeIndex> {
+pub struct TreeSlice<'tree, T, Idx: ArrayIndex> {
     tree: &'tree Octree<T, Idx>,
     root: Idx,
 }
 
-impl<T, Idx: TreeIndex> Octree<T, Idx> {
+impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     pub fn slice(&self, index: Idx) -> Result<TreeSlice<T, Idx>, Error<Idx>> {
         if !self.proxies.is_init(index.as_()) {
             Err(Error::InvalidIndex(index))
@@ -29,14 +30,14 @@ impl<T, Idx: TreeIndex> Octree<T, Idx> {
     }
 }
 
-impl<'tree, T, Idx: TreeIndex> TreeSlice<'tree, T, Idx> {
+impl<'tree, T, Idx: ArrayIndex> TreeSlice<'tree, T, Idx> {
     pub fn base(&self) -> &'tree Octree<T, Idx> {
         self.tree
     }
 }
 
 /// Trait for [Octree] references.
-pub trait OctreeSlice<T, Idx: TreeIndex> {
+pub trait OctreeSlice<T, Idx: ArrayIndex> {
     /// Index of the root node.
     fn root_idx(&self) -> Idx;
     /// The height of a subtree, originating at a specific node.
@@ -55,7 +56,7 @@ pub trait OctreeSlice<T, Idx: TreeIndex> {
     fn leaf_dfi(&self) -> LeafIter<T, Idx>;
 }
 
-impl<T, Idx: TreeIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
+impl<T, Idx: ArrayIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
     fn root_idx(&self) -> Idx {
         self.root
     }
@@ -91,7 +92,7 @@ impl<T, Idx: TreeIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
     }
 }
 
-impl<'tree, T, Idx: TreeIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx>
+impl<'tree, T, Idx: ArrayIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx>
 where
     u8: AsPrimitive<Idx>,
 {
