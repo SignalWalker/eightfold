@@ -36,3 +36,11 @@ impl<Idx: ArrayIndex> NodePoint<Idx> {
         Self(nalgebra::point![x, y, z, d])
     }
 }
+
+/// Quickly construct a [NodePoint]
+#[macro_export]
+macro_rules! nodepoint {
+    [$x:expr, $y:expr, $z:expr, $w:expr] => {
+        NodePoint(nalgebra::point![$x, $y, $z, $w])
+    }
+}

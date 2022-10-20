@@ -40,6 +40,7 @@ impl Octant {
     ];
 
     /// Construct an Octant from coordinates.
+    #[inline]
     pub const fn new(i: bool, j: bool, k: bool) -> Self {
         Self(((i as u8) << 2) | ((j as u8) << 1) | (k as u8))
     }
@@ -61,6 +62,7 @@ impl Octant {
     }
 
     /// Get a [Vector3\<u8\>](Vector3) from Octant `0` to self.
+    #[inline]
     pub const fn vector(self) -> Vector3<u8> {
         nalgebra::vector![self.i(), self.j(), self.k()]
     }
@@ -80,12 +82,12 @@ impl From<Octant> for u8 {
 
 macro_rules! np_add_impl {
     ($np:ident, $o:ident) => {
-        NodePoint::new(
+        $crate::nodepoint![
             $np.0.x + $o.i().as_(),
             $np.0.y + $o.j().as_(),
             $np.0.z + $o.k().as_(),
-            $np.0.w + Idx::one(),
-        )
+            $np.0.w + Idx::one()
+        ]
     };
 }
 
@@ -96,6 +98,7 @@ where
     type Output = NodePoint<Idx>;
 
     /// Get the [NodePoint] of an [Octant] of self
+    #[inline]
     fn add(self, o: Octant) -> Self::Output {
         np_add_impl!(self, o)
     }
@@ -108,6 +111,7 @@ where
     type Output = NodePoint<Idx>;
 
     /// Get the [NodePoint] of an [Octant] of self
+    #[inline]
     fn add(self, o: Octant) -> Self::Output {
         np_add_impl!(self, o)
     }
