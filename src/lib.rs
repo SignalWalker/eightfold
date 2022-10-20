@@ -32,6 +32,7 @@ pub type VoxelPoint<Idx> = Point3<Idx>;
 pub struct NodePoint<Idx: ArrayIndex>(pub Point4<Idx>);
 
 impl<Idx: ArrayIndex> NodePoint<Idx> {
+    #[inline]
     pub const fn new(x: Idx, y: Idx, z: Idx, d: Idx) -> Self {
         Self(nalgebra::point![x, y, z, d])
     }
