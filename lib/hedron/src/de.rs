@@ -1,6 +1,6 @@
 //! Deserialization of geometry from various storage formats.
 
-#[cfg(feature = "gltf")]
+#[cfg(feature = "de_gltf")]
 pub mod gltf;
-#[cfg(feature = "obj")]
+#[cfg(feature = "de_obj")]
 pub mod obj;

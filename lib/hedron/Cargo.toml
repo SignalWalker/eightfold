@@ -7,6 +7,7 @@ edition = "2021"
 stablevec = { path = "../stablevec" }
 eightfold-common = { path = "../common" }
 
+nalgebra = "^0.31"
 num-traits = "^0.2"
 
 # gltf
@@ -16,6 +17,12 @@ gltf = { optional = true, version = "^1.0", features = [] }
 tobj = { optional = true, version = "^3.2", features = [] }
 
 [features]
-default = []
-obj = [ "dep:tobj" ]
-gltf = [ "dep:gltf" ]
+default = [ "serialize" ]
+
+serialize = []
+ser_gltf = [ "dep:gltf", "serialize" ]
+
+deserialize = []
+de_obj = [ "dep:tobj", "deserialize" ]
+de_gltf = [ "dep:gltf", "deserialize" ]
+

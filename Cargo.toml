@@ -16,10 +16,11 @@ categories = [ "data-structures", "rendering", "rendering::data-formats", "game-
 members = [ "samples/*", "lib/*" ]
 
 [dependencies]
+eightfold-common = { path = "./lib/common" }
+
 nalgebra = "^0.31"
 num-traits = "^0.2"
 thiserror = "^1.0"
-eightfold-common = { path = "./lib/common" }
 
 stablevec = { path = "./lib/stablevec" }
 
