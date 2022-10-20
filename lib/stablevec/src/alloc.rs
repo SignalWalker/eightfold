@@ -1,6 +1,6 @@
 //! Utilities related to allocation & deallocation of [StableVecs](StableVec).
 //!
-//! Much of this is very similar to [std::alloc::RawVec], which would be used directly if it was
+//! Much of this is very similar to (or taken almost verbatim from) [std::alloc::RawVec], which would be used directly if it was
 //! part of std's public interface.
 
 use std::{
