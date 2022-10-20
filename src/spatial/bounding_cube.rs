@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use nalgebra::{Point3, Scalar};
+use nalgebra::{point, Point3, Scalar};
 use parry3d::bounding_volume::AABB;
 
 use super::{error::Error, Real};
@@ -22,18 +22,18 @@ impl<R: Scalar> AABC<R> {
     where
         R: Add<Output = R> + Copy,
     {
-        Point3::new(
+        nalgebra::point![
             self.origin.x + self.length,
             self.origin.y + self.length,
-            self.origin.z + self.length,
-        )
+            self.origin.z + self.length
+        ]
     }
 }
 
 impl AABC<Real> {
     pub fn new_invalid() -> Self {
         Self {
-            origin: Point3::new(Real::MAX, Real::MAX, Real::MAX),
+            origin: point![Real::MAX, Real::MAX, Real::MAX],
             length: Real::MIN,
         }
     }
@@ -59,18 +59,17 @@ impl AABC<Real> {
     }
 
     pub fn take_octant(&self, oct: Octant) -> Self {
-        use Point3 as P;
         let l2 = self.length / 2.0;
         Self {
             origin: match oct.0 {
                 0 => self.origin,
-                1 => P::new(self.origin.x, self.origin.y, self.origin.z + l2),
-                2 => P::new(self.origin.x, self.origin.y + l2, self.origin.z),
-                3 => P::new(self.origin.x, self.origin.y + l2, self.origin.z + l2),
-                4 => P::new(self.origin.x + l2, self.origin.y, self.origin.z),
-                5 => P::new(self.origin.x + l2, self.origin.y, self.origin.z + l2),
-                6 => P::new(self.origin.x + l2, self.origin.y + l2, self.origin.z),
-                7 => P::new(self.origin.x + l2, self.origin.y + l2, self.origin.z + l2),
+                1 => point![self.origin.x, self.origin.y, self.origin.z + l2],
+                2 => point![self.origin.x, self.origin.y + l2, self.origin.z],
+                3 => point![self.origin.x, self.origin.y + l2, self.origin.z + l2],
+                4 => point![self.origin.x + l2, self.origin.y, self.origin.z],
+                5 => point![self.origin.x + l2, self.origin.y, self.origin.z + l2],
+                6 => point![self.origin.x + l2, self.origin.y + l2, self.origin.z],
+                7 => point![self.origin.x + l2, self.origin.y + l2, self.origin.z + l2],
                 _ => unreachable!(),
             },
             length: l2,
@@ -96,18 +95,17 @@ impl AABC<Real> {
 
     /// Given an Octant `o`, construct an AABC `n` such that `self` is the `o`th octant of `n`
     pub fn parent(&self, oct: Octant) -> Self {
-        use Point3 as P;
         let l2 = self.length * 2.0;
         Self {
             origin: match oct.0 {
                 0 => self.origin,
-                1 => P::new(self.origin.x, self.origin.y, self.origin.z - l2),
-                2 => P::new(self.origin.x, self.origin.y - l2, self.origin.z),
-                3 => P::new(self.origin.x, self.origin.y - l2, self.origin.z - l2),
-                4 => P::new(self.origin.x - l2, self.origin.y, self.origin.z),
-                5 => P::new(self.origin.x - l2, self.origin.y, self.origin.z - l2),
-                6 => P::new(self.origin.x - l2, self.origin.y - l2, self.origin.z),
-                7 => P::new(self.origin.x - l2, self.origin.y - l2, self.origin.z - l2),
+                1 => point![self.origin.x, self.origin.y, self.origin.z - l2],
+                2 => point![self.origin.x, self.origin.y - l2, self.origin.z],
+                3 => point![self.origin.x, self.origin.y - l2, self.origin.z - l2],
+                4 => point![self.origin.x - l2, self.origin.y, self.origin.z],
+                5 => point![self.origin.x - l2, self.origin.y, self.origin.z - l2],
+                6 => point![self.origin.x - l2, self.origin.y - l2, self.origin.z],
+                7 => point![self.origin.x - l2, self.origin.y - l2, self.origin.z - l2],
                 _ => unreachable!(),
             },
             length: l2,
