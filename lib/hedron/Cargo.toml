@@ -10,6 +10,16 @@ eightfold-common = { path = "../common" }
 nalgebra = "^0.31"
 num-traits = "^0.2"
 
+thiserror = "^1.0"
+
+static_assertions = "^1.1"
+
+# wgpu
+wgpu = { optional = true, version = "^0.14", features = [] }
+
+# vulkan
+ash = { optional = true, version = "^0.37", features = [] }
+
 # gltf
 gltf = { optional = true, version = "^1.0", features = [] }
 
@@ -17,7 +27,10 @@ gltf = { optional = true, version = "^1.0", features = [] }
 tobj = { optional = true, version = "^3.2", features = [] }
 
 [features]
-default = [ "serialize" ]
+default = [ "serialize", "wgpu" ]
+
+vulkan = [ "dep:ash" ]
+wgpu = [ "dep:wgpu" ]
 
 serialize = []
 ser_gltf = [ "dep:gltf", "serialize" ]
