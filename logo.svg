@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="55.559742"
+   height="64"
+   viewBox="0 0 55.559742 64.000001"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title19254">Eightfold Logo</title>
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="false"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     shape-rendering="crispEdges"
+     showborder="true"
+     inkscape:zoom="11.923049"
+     inkscape:cx="6.4161442"
+     inkscape:cy="33.506531"
+     inkscape:window-width="1920"
+     inkscape:window-height="1038"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="axonomgrid"
+       id="grid8570"
+       units="px"
+       spacingy="1"
+       gridanglex="30"
+       gridanglez="30"
+       originx="27.75937"
+       originy="32.066979"
+       color="#4cc3ff"
+       opacity="0.10980392"
+       empcolor="#4dc4ff"
+       empopacity="0.41176471"
+       empspacing="12"
+       snapvisiblegridlinesonly="true"
+       visible="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-4.2406296,0.06697949)">
+    <g
+       id="g10904"
+       style="stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       transform="matrix(2.6229527,0,0,2.6229527,-51.935332,-20.550609)"
+       inkscape:label="cube">
+      <path
+         style="fill:#8768de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         d="m 21.607696,26 5.196152,3 v -6 l -5.196153,-3 z"
+         id="path9329"
+         inkscape:label="blue" />
+      <path
+         style="fill:#68de78;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         d="M 26.803848,11 32,8.0000002 37.196153,11 32,14 Z"
+         id="path9335"
+         inkscape:label="green" />
+      <path
+         style="fill:#de6767;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         d="m 42.392305,26 -10e-7,-6 -5.196152,3 v 6 z"
+         id="path9341"
+         inkscape:label="red" />
+      <g
+         id="g9416"
+         style="fill:#66c5de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         inkscape:label="cyan">
+        <path
+           style="fill:#66c5de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 21.607695,14 26.803848,11 32,14 26.803848,17 Z"
+           id="path9333"
+           inkscape:label="cy" />
+        <path
+           style="fill:#66c5de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="m 21.607695,20 v -6 l 5.196153,3 v 6 z"
+           id="path9331"
+           inkscape:label="cz" />
+        <path
+           style="fill:#66c5de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 26.803847,23 32,20 v -6 l -5.196153,3 z"
+           id="path9345"
+           inkscape:label="cx" />
+      </g>
+      <g
+         id="g9421"
+         style="fill:#d6de68;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         inkscape:label="yellow">
+        <path
+           style="fill:#d6de68;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 42.392305,14 37.196152,11 32,14 l 5.196152,3 z"
+           id="path9337"
+           inkscape:label="yy" />
+        <path
+           style="fill:#d6de68;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 37.196152,23 32,20 v -6 0 l 5.196153,3 z"
+           id="path9347"
+           inkscape:label="yz" />
+        <path
+           style="fill:#d6de68;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="m 42.392305,20 v -6 l -5.196153,3 1e-6,6 z"
+           id="path9343"
+           inkscape:label="yx" />
+      </g>
+      <g
+         id="g9426"
+         style="fill:#de69b7;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         inkscape:label="magenta">
+        <path
+           style="fill:#de69b7;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 32.000001,26 26.803848,23 32,20 l 5.196152,3 z"
+           id="path9349"
+           inkscape:label="my" />
+        <path
+           style="fill:#de69b7;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 32,32 26.803848,29 V 23 L 32,26 Z"
+           id="path9327"
+           inkscape:label="mz" />
+        <path
+           style="fill:#de69b7;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="m 32,32 v -6 l 5.196153,-3 -1e-6,6 z"
+           id="path9339"
+           inkscape:label="mx" />
+      </g>
+      <g
+         id="g9431"
+         transform="translate(4.3642225e-7,1.4175778e-5)"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+         inkscape:label="white">
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="M 34.598076,18.5 32,17 29.401924,18.5 32,20 Z"
+           id="path9355"
+           inkscape:label="wy" />
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="m 29.401924,18.5 v 3 L 32.000001,23 32,20 Z"
+           id="path9357"
+           inkscape:label="wz" />
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+           d="m 32,23 v -3 l 2.598076,-1.5 v 3 z"
+           id="path9353"
+           inkscape:label="wx" />
+      </g>
+    </g>
+  </g>
+  <metadata
+     id="metadata19252">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Eightfold Logo</dc:title>
+        <dc:date>2023-01-03</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Ash Walker</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-nc-sa/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:prohibits
+           rdf:resource="http://creativecommons.org/ns#CommercialUse" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>
