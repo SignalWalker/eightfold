@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Ash Walker <ash@ashwalker.net>"]
 edition = "2021"
 
-description = "3D space partitioning library"
+description = "3D spatial partitioning library"
 readme = true
 repository = "https://github.com/SignalWalker/eightfold"
 license = "LGPL-3.0-or-later"
@@ -13,6 +13,8 @@ keywords = [ "gamedev", "graphics", "octree" ]
 categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
 
 [workspace]
+# using "samples" instead of "examples" because i don't want to have to have every example dependency in this file
+# "lib" contains extra libraries separate from the main eightfold library
 members = [ "samples/*", "lib/*" ]
 
 [dependencies]
@@ -28,7 +30,7 @@ stablevec = { path = "./lib/stablevec" }
 tracing = { optional = true, version = "^0.1" }
 
 # spatial
-parry3d = { optional = true, version = "^0.10" }
+parry3d = { optional = true, version = "^0.12" }
 
 # mesh
 hedron = { optional = true, path = "./lib/hedron" }
