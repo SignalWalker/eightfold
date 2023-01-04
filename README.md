@@ -1,13 +1,22 @@
-<h1 align="center">
-  <img src="wordmark.svg" alt="The Eightfold wordmark; a cube divided into color-coded octants followed by the word 'Eightfold'." title="Eightfold" role="img"/>
+<style>
+@font-face {
+  font-family: "CirrusCumulus";
+  src: local("CirrusCumulus"),
+    url("https://gitlab.com/Clarasambot/cirruscumulus/-/raw/master/fonts/CirrusCumulus.woff") format("woff"),
+    url("https://gitlab.com/Clarasambot/cirruscumulus/-/raw/master/fonts/CirrusCumulus.otf") format("opentype"),
+    url("https://gitlab.com/Clarasambot/cirruscumulus/-/raw/master/fonts/CirrusCumulus.ttf") format("truetype");
+}
+</style>
+<h1 align="center" style="font-family: CirrusCumulus, serif; font-size: 4em;">
+  <a href="https://github.com/SignalWalker/eightfold"><img src="assets/doc/wordmark.svg" srcset="https://github.com/SignalWalker/eightfold/raw/main/assets/doc/wordmark.svg" alt="Eightfold" role="img"/></a>
 </h1>
 
-<p align="center">
+<nav style="margin: auto; display: flex; justify-content: space-evenly; min-width: fit-content; max-width: 72ch;">
   <a href="https://crates.io/crates/eightfold"><img src="https://img.shields.io/crates/v/eightfold" alt="crates.io"/></a>
   <a href="https://github.com/SignalWalker/eightfold/commits/main"><img src="https://img.shields.io/github/commits-since/SignalWalker/eightfold/0.1.0" alt="commits since last release"/></a>
   <a href="https://docs.rs/eightfold"><img src="https://img.shields.io/docsrs/eightfold" alt="docs.rs"/></a>
-  <a href="https://opensource.org/licenses/lgpl-license"><img src="https://img.shields.io/crates/l/eightfold" alt="LGPL 3.0 or later"/></a>
-</p>
+  <a href="https://opensource.org/licenses/lgpl-license" rel="external license"><img src="https://img.shields.io/crates/l/eightfold" alt="LGPL 3.0 or later"/></a>
+</nav>
 
 A library for spatial partitioning of 3D data. Built with [nalgebra](https://nalgebra.org).
 

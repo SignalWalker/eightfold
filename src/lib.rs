@@ -1,6 +1,12 @@
 #![doc = include_str!("../README.md")]
-#![cfg_attr(not(debug_assertions), warn(missing_docs))]
-#![warn(unreachable_pub)]
+#![doc(
+    html_favicon_url = "https://github.com/signalwalker/eightfold/raw/main/assets/doc/logo.svg",
+    html_logo_url = "https://github.com/signalwalker/eightfold/raw/main/assets/doc/logo.svg"
+)]
+// release build lints
+#![cfg_attr(not(debug_assertions), warn(missing_docs), deny(unreachable_pub))]
+// debug build lints
+#![cfg_attr(debug_assertions, warn(unreachable_pub))]
 
 mod geom;
 #[cfg(feature = "mesh")]
