@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="239.29688"
-   height="63.999996"
-   viewBox="0 0 63.313964 16.933332"
+   width="424.11823"
+   height="128"
+   viewBox="0 0 112.21462 33.866662"
    version="1.1"
    id="svg19286"
    xml:space="preserve"
@@ -24,9 +24,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="3.867727"
-     inkscape:cx="88.424027"
-     inkscape:cy="39.170293"
+     inkscape:zoom="2.1600532"
+     inkscape:cx="230.78135"
+     inkscape:cy="150.22778"
      inkscape:window-width="1920"
      inkscape:window-height="1038"
      inkscape:window-x="0"
@@ -38,18 +38,18 @@
      inkscape:groupmode="layer"
      id="layer1"><text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.7px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
-       x="14.556594"
-       y="12.637113"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:21.1667px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       x="31.908136"
+       y="25.26762"
        id="text1847"><tspan
          sodipodi:role="line"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.7px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
-         x="14.556594"
-         y="12.637113"
-         id="tspan1849">eightfold</tspan></text><g
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:21.1667px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
+         x="31.908136"
+         y="25.26762"
+         id="tspan1849">Eightfold</tspan></text><g
        id="g10904"
        style="stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
-       transform="matrix(0.69398956,0,0,0.69398956,-14.863223,-5.4066157)"
+       transform="matrix(1.3890465,0,0,1.3890465,-29.749306,-10.847589)"
        inkscape:label="cube"><path
          style="fill:#8768de;fill-opacity:1;stroke:#000000;stroke-width:0.38125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
          d="m 21.607696,26 5.196152,3 v -6 l -5.196153,-3 z"
