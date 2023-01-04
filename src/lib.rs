@@ -1,4 +1,5 @@
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../assets/doc/header.html")] // metadata
+#![doc = include_str!("../README.md")] // actual documentation
 #![doc(
     html_favicon_url = "https://github.com/signalwalker/eightfold/raw/main/assets/doc/logo.svg",
     html_logo_url = "https://github.com/signalwalker/eightfold/raw/main/assets/doc/logo.svg"
