@@ -1,7 +1,7 @@
 # Eightfold
 
 <p align="center">
-  <img src="logo.svg" alt="Eightfold logo; a cube divided into color-coded octants." title="Eightfold Logo" role="img"/>
+  <img src="wordmark.svg" alt="The Eightfold wordmark; a cube divided into color-coded octants followed by the word 'Eightfold'." title="Eightfold" role="img"/>
 </p>
 
 <p align="center">
