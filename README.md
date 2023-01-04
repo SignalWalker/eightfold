@@ -1,8 +1,6 @@
-# Eightfold
-
-<p align="center">
+<h1 align="center">
   <img src="wordmark.svg" alt="The Eightfold wordmark; a cube divided into color-coded octants followed by the word 'Eightfold'." title="Eightfold" role="img"/>
-</p>
+</h1>
 
 <p align="center">
   <a href="https://crates.io/crates/eightfold"><img src="https://img.shields.io/crates/v/eightfold" alt="crates.io"/></a>
