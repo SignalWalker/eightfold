@@ -1,6 +1,8 @@
-<h1 align="center" style="font-family: CirrusCumulus, serif; font-size: 4em;">
-  <img src="assets/doc/wordmark.svg" srcset="https://github.com/SignalWalker/eightfold/raw/main/assets/doc/wordmark.svg" alt="Eightfold" role="img"/>
-</h1>
+<div style="font-family: CirrusCumulus, serif; font-size: 4em; display: flex; justify-content: center; margin: auto;" align="center">
+  <img src="assets/doc/wordmark.svg" srcset="https://github.com/SignalWalker/eightfold/raw/main/assets/doc/wordmark.svg" alt="Eightfold" role="img">
+</div>
+
+<hr align="center"/>
 
 <div align="center" style="margin: auto; display: flex; justify-content: space-evenly; min-width: fit-content; max-width: 72ch;">
   <a href="https://crates.io/crates/eightfold"><img src="https://img.shields.io/crates/v/eightfold" alt="crates.io"/></a>
@@ -9,7 +11,9 @@
   <a href="https://opensource.org/licenses/lgpl-license" rel="external license"><img src="https://img.shields.io/crates/l/eightfold" alt="LGPL 3.0 or later"/></a>
 </div>
 
-A library for spatial partitioning of 3D data. Built with [nalgebra](https://nalgebra.org).
+<p align="center">A library for partitioning 3D data. Built with <a href="https://nalgebra.org">nalgebra</a>.</p>
+
+<hr align="center"/>
 
 Not yet fit for actual use; wait until [1.0.0](https://github.com/SignalWalker/eightfold/issues/1).
 
