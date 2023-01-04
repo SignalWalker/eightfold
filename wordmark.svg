@@ -12,6 +12,7 @@
    sodipodi:docname="wordmark.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
      id="namedview19288"
@@ -24,9 +25,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="2.1600532"
-     inkscape:cx="168.97732"
-     inkscape:cy="150.69073"
+     inkscape:zoom="2.8226725"
+     inkscape:cx="141.70967"
+     inkscape:cy="72.449071"
      inkscape:window-width="1920"
      inkscape:window-height="1038"
      inkscape:window-x="0"
@@ -36,9 +37,7 @@
      id="defs19283" /><g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1"><image
-       href="logo.svg"
-       id="image485" /><text
+     id="layer1"><text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:21.1667px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
        x="31.908136"
@@ -48,4 +47,11 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:21.1667px;font-family:CirrusCumulus;-inkscape-font-specification:CirrusCumulus;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
          x="31.908136"
          y="25.26762"
-         id="tspan1849">Eightfold</tspan></text></g></svg>
+         id="tspan1849">Eightfold</tspan></text><image
+       preserveAspectRatio="none"
+       width="29.400343"
+       height="33.866665"
+       xlink:href="logo.svg"
+       id="image207"
+       x="0"
+       y="0" /></g></svg>
