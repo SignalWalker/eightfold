@@ -1,13 +1,10 @@
 //! Additional [Octant] implementation for spatial trees
 
-use nalgebra::{Point3};
-
-
-
+use nalgebra::Point3;
 
 use crate::Octant;
 
-use super::{Float};
+use super::Float;
 
 impl Octant {
     /// Find the Octant of a point `p` relative to another point `c`.

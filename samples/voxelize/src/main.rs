@@ -1,28 +1,13 @@
 #![allow(unsafe_code)]
 
-
-
-
-
-
-
 use buffer::{BufferCache, BufferError};
 use clap::Parser;
 use eightfold::spatial::VoxelOctree;
 
-use gltf::accessor::{DataType};
+use gltf::accessor::DataType;
 use gltf::mesh::Mode;
 use gltf::{Gltf, Node, Semantic};
-use nalgebra::{
-    Affine3, Isometry3, Matrix4, Point3, Quaternion, Translation3, Unit,
-    Vector3,
-};
-
-
-
-
-
-
+use nalgebra::{Affine3, Isometry3, Matrix4, Point3, Quaternion, Translation3, Unit, Vector3};
 
 /// Functions and structures related specifically to the command-line interface.
 pub mod cli;

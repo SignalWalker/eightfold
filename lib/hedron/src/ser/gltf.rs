@@ -111,8 +111,4 @@ pub enum Attribute {
 }
 
 /// Type definitions for mesh primitive attribute data
-pub mod attribute {
-    
-    
-    
-}
+pub mod attribute {}

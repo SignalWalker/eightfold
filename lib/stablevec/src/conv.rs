@@ -44,7 +44,10 @@ impl<T> From<Vec<T>> for StableVec<T> {
 
         Self {
             data: unsafe {
-                Box::from_raw(slice::from_raw_parts_mut(ptr.cast::<std::mem::MaybeUninit<T>>(), cap))
+                Box::from_raw(slice::from_raw_parts_mut(
+                    ptr.cast::<std::mem::MaybeUninit<T>>(),
+                    cap,
+                ))
             },
             flags: {
                 let mut res = BitVec::repeat(true, len);

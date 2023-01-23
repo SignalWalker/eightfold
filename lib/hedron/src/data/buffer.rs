@@ -190,7 +190,11 @@ impl<T, B: Deref<Target = Buffer>> BufferView<T, B> {
         // safety guarantees upheld by constructors
         unsafe {
             std::slice::from_raw_parts(
-                self.data.data.as_ptr().add(self.offset).cast::<std::mem::MaybeUninit<T>>(),
+                self.data
+                    .data
+                    .as_ptr()
+                    .add(self.offset)
+                    .cast::<std::mem::MaybeUninit<T>>(),
                 self.count,
             )
         }
