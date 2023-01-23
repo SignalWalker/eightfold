@@ -103,7 +103,7 @@ where
 {
     type Output = NodePoint<Idx>;
 
-    /// Get the [NodePoint] of an [Octant] of self
+    /// Get the [`NodePoint`] of an [Octant] of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         np_add_impl!(self, o)
@@ -116,7 +116,7 @@ where
 {
     type Output = NodePoint<Idx>;
 
-    /// Get the [NodePoint] of an [Octant] of self
+    /// Get the [`NodePoint`] of an [Octant] of self
     #[inline]
     fn add(self, o: Octant) -> Self::Output {
         np_add_impl!(self, o)

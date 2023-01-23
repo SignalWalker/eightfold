@@ -4,7 +4,7 @@ pub mod primitive;
 ///
 /// # Considerations
 ///
-/// * Must store glTF meshes losslessly
+/// * Must store `glTF` meshes losslessly
 /// * Should allocate as little memory as possible
 ///
 /// # Characteristics

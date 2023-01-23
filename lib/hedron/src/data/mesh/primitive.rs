@@ -63,7 +63,7 @@ impl<A, M> Primitive<A, M> {
 }
 
 impl<A, M> Primitive<A, M> {
-    pub fn iter_attr(&self, attr: &AttributeUsage) -> Option<()> {
+    pub fn iter_attr(&self, _attr: &AttributeUsage) -> Option<()> {
         None
     }
 }

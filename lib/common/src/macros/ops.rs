@@ -1,4 +1,4 @@
-/// Implement a trait (and its `*Assign` sibling) from std::ops for every permutation of two types as owned and as references.
+/// Implement a trait (and its `*Assign` sibling) from `std::ops` for every permutation of two types as owned and as references.
 #[macro_export]
 macro_rules! impl_op {
   // Implement $Op for each pair in [($Lhs, $Rhs), ($Lhs, &$Rhs), (&$Lhs, $Rhs), (&$Lhs, &$Rhs)]
@@ -88,7 +88,7 @@ macro_rules! impl_mul_div {
     };
 }
 
-/// Implement [Index](std::ops::Index) and [IndexMut](std::ops::IndexMut) for a type
+/// Implement [Index](std::ops::Index) and [`IndexMut`](std::ops::IndexMut) for a type
 #[macro_export]
 macro_rules! impl_index {
     ($t:ident: $T:ident$(<$($param:tt),+>)? -> $Output:ty, $idx:ident: $Idx:ty; $op_ref:expr; $op_mut:expr) => {

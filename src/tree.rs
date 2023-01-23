@@ -9,7 +9,7 @@ mod slice;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ops::{Index, IndexMut, Range, Shl, ShlAssign, Shr, ShrAssign},
+    ops::{Index, Range, ShlAssign, ShrAssign},
 };
 
 use eightfold_common::ArrayIndex;
@@ -74,7 +74,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         let mut depth = Idx::ZERO;
         let mut p = self.proxies[node.as_()];
         while p.parent != node {
-            depth = depth + Idx::ONE;
+            depth += Idx::ONE;
             node = p.parent;
             p = self.proxies[node.as_()];
         }
@@ -236,7 +236,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         self.root
     }
 
-    /// Code shared by [voxel_at] and [voxel_at_unchecked]
+    /// Code shared by [`voxel_at`] and [`voxel_at_unchecked`]
     #[inline]
     fn internal_voxel_at(&self, p: &VoxelPoint<Idx>, size: Idx) -> Idx
     where
@@ -255,7 +255,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         idx
     }
 
-    /// Get the index of the deepest voxel containing a specific [VoxelPoint].
+    /// Get the index of the deepest voxel containing a specific [`VoxelPoint`].
     ///
     /// *Warning*: this requires knowing the height of the tree, which can be an expensive
     /// calculation.
@@ -269,7 +269,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         self.internal_voxel_at(p, self.grid_size())
     }
 
-    /// Get the index of the deepest voxel containing a specific [VoxelPoint].
+    /// Get the index of the deepest voxel containing a specific [`VoxelPoint`].
     ///
     /// *Warning*: this requires knowing the height of the tree, which can be an expensive
     /// calculation.
@@ -287,7 +287,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         Ok(self.internal_voxel_at(p, size))
     }
 
-    /// Get the index of the deepest voxel encompassing a specific [NodePoint].
+    /// Get the index of the deepest voxel encompassing a specific [`NodePoint`].
     pub fn node_at(&self, p: &NodePoint<Idx>) -> Idx
     where
         Idx: ShlAssign<Idx> + ClosedMul + ShrAssign<Idx>,
@@ -395,7 +395,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         self.leaf_data.iter()
     }
 
-    /// Calculate the [NodePoint] of a specific node.
+    /// Calculate the [`NodePoint`] of a specific node.
     ///
     /// # Panics
     ///
@@ -407,7 +407,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         let mut d = Idx::ZERO;
         let mut p = self.proxies[index.as_()];
         while p.parent != index {
-            d = d + Idx::ONE;
+            d += Idx::ONE;
             match self.proxies[p.parent.as_()].data {
                 ProxyData::Branch(b_idx) => {
                     let oct = Octant(
@@ -417,9 +417,9 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
                             .unwrap()
                             .as_(),
                     );
-                    x = x + oct.i().into();
-                    y = y + oct.j().into();
-                    z = z + oct.k().into();
+                    x += oct.i().into();
+                    y += oct.j().into();
+                    z += oct.k().into();
                 }
                 _ => unreachable!(),
             }
@@ -429,7 +429,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         NodePoint::new(x, y, z, d)
     }
 
-    /// Calculate the [NodePoint] of a specific node.
+    /// Calculate the [`NodePoint`] of a specific node.
     pub fn node_point_of(&self, index: Idx) -> Result<NodePoint<Idx>, Error<Idx>> {
         if !self.proxies.is_init(index.as_()) {
             return Err(Error::InvalidIndex(index));
@@ -437,7 +437,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         Ok(self.node_point_of_unchecked(index))
     }
 
-    /// [Self::graft], without error checks.
+    /// [`Self::graft`], without error checks.
     ///
     /// # Panics
     ///
@@ -493,8 +493,8 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     ///
     /// # Errors
     ///
-    /// * [InvalidIndex](Error::InvalidIndex) if `node` is not a valid index into `self.proxies`.
-    /// * [NotAVoid](Error::NotAVoid) if `node` is not the index of a [ProxyData::Void] node.
+    /// * [`InvalidIndex`](Error::InvalidIndex) if `node` is not a valid index into `self.proxies`.
+    /// * [`NotAVoid`](Error::NotAVoid) if `node` is not the index of a [`ProxyData::Void`] node.
     pub fn graft(&mut self, other: Self, node: Idx) -> Result<(), Error<Idx>>
     where
         usize: AsPrimitive<Idx>,

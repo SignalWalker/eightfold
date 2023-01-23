@@ -1,6 +1,6 @@
-//! Utilities related to allocation & deallocation of [StableVecs](StableVec).
+//! Utilities related to allocation & deallocation of [`StableVecs`](StableVec).
 //!
-//! Much of this is very similar to (or taken almost verbatim from) [std::alloc::RawVec], which would be used directly if it was
+//! Much of this is very similar to (or taken almost verbatim from) [`std::alloc::RawVec`], which would be used directly if it was
 //! part of std's public interface.
 
 use std::{
@@ -51,7 +51,7 @@ fn allocate<T>(cap: usize) -> Box<[MaybeUninit<T>]> {
     }
 
     unsafe {
-        let slice = slice::from_raw_parts_mut(ptr as *mut MaybeUninit<T>, cap);
+        let slice = slice::from_raw_parts_mut(ptr.cast::<std::mem::MaybeUninit<T>>(), cap);
         Box::<[MaybeUninit<T>]>::from_raw(slice)
     }
 }
@@ -159,7 +159,7 @@ impl<T: Clone> Clone for StableVec<T> {
 // }
 
 impl<T> StableVec<T> {
-    /// Minimum reserved capacity. Strategy taken from the standard library's RawVec type.
+    /// Minimum reserved capacity. Strategy taken from the standard library's `RawVec` type.
     const MIN_NON_ZERO_CAP: usize = if mem::size_of::<T>() == 1 {
         8
     } else if mem::size_of::<T>() <= 1024 {
@@ -168,7 +168,7 @@ impl<T> StableVec<T> {
         1
     };
 
-    /// Construct a [StableVec] from its raw components.
+    /// Construct a [`StableVec`] from its raw components.
     ///
     /// # Safety
     ///
@@ -178,7 +178,7 @@ impl<T> StableVec<T> {
         Self { data, flags, count }
     }
 
-    /// Create a new, empty [StableVec].
+    /// Create a new, empty [`StableVec`].
     pub fn new() -> Self {
         Self {
             data: Box::new([]),
@@ -187,7 +187,7 @@ impl<T> StableVec<T> {
         }
     }
 
-    /// Create a new [StableVec] with a specific capacity.
+    /// Create a new [`StableVec`] with a specific capacity.
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             data: allocate::<T>(cap),
@@ -207,7 +207,7 @@ impl<T> StableVec<T> {
         }
     }
 
-    /// Ensure that at least `additional` more elements can be added to the StableVec without
+    /// Ensure that at least `additional` more elements can be added to the `StableVec` without
     /// reallocation.
     pub fn reserve(&mut self, additional: usize) {
         tracing::trace!(additional, "reserving capacity");
@@ -222,7 +222,7 @@ impl<T> StableVec<T> {
         self.grow_amortized(amt);
     }
 
-    /// Ensure that at least `additional` more elements can be added to the StableVec without
+    /// Ensure that at least `additional` more elements can be added to the `StableVec` without
     /// reallocation.
     pub fn reserve_exact(&mut self, additional: usize) {
         if additional == 0 {

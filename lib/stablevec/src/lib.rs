@@ -56,19 +56,19 @@ impl<T> Default for StableVec<T> {
 }
 
 impl<T> StableVec<T> {
-    /// Get the total size of this StableVec.
+    /// Get the total size of this `StableVec`.
     #[inline(always)]
     pub const fn capacity(&self) -> usize {
         self.data.len()
     }
 
-    /// Get the number of empty slots in this StableVec.
+    /// Get the number of empty slots in this `StableVec`.
     #[inline(always)]
     pub fn spare_capacity(&self) -> usize {
         self.capacity() - self.count
     }
 
-    /// Get the number of initialized elements in the StableVec
+    /// Get the number of initialized elements in the `StableVec`
     #[inline(always)]
     pub fn len_init(&self) -> usize {
         self.count
@@ -267,7 +267,7 @@ impl<T> StableVec<T> {
     }
 
     pub fn is_init(&self, index: usize) -> bool {
-        self.flags.get(index).map(|b| *b).unwrap_or(false)
+        self.flags.get(index).map_or(false, |b| *b)
     }
 
     pub fn is_fragmented(&self) -> bool {

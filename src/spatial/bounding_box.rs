@@ -12,7 +12,7 @@ pub enum AabbError<Real: Float> {
 
 /// Axis-Aligned Bounding Box
 ///
-/// Similar to [parry3d::Aabb], except generic over the Real type.
+/// Similar to [`parry3d::Aabb`], except generic over the Real type.
 #[derive(Debug, Clone, Copy)]
 pub struct Aabb<Real: Float> {
     pub mins: Point3<Real>,
@@ -152,7 +152,7 @@ impl<Real: Float> Aabb<Real> {
     ///
     /// # Errors
     ///
-    /// * [PointOutOfBounds](AabbError::PointOutOfBounds) if `p` ∉ `self`.
+    /// * [`PointOutOfBounds`](AabbError::PointOutOfBounds) if `p` ∉ `self`.
     #[inline]
     #[allow(unsafe_code)]
     pub fn child_containing(&self, p: &Point3<Real>) -> Result<(Octant, Self), AabbError<Real>> {

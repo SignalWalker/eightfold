@@ -19,7 +19,7 @@ pub enum AttributeUsage {
     Weights(u32),
 }
 
-/// The inner components of an [AttributeType]
+/// The inner components of an [`AttributeType`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AttributeComponent {
     U8,
@@ -56,9 +56,9 @@ impl AttributeComponent {
     }
 }
 
-/// The type of value stored in an [AttrStore].
+/// The type of value stored in an [`AttrStore`].
 ///
-/// Values taken from the [glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#accessor-data-types).
+/// Values taken from the [`glTF` specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#accessor-data-types).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AttributeType {
     Scalar,
@@ -233,7 +233,7 @@ impl From<Tangent> for Vector3<f32> {
 }
 
 impl Handedness {
-    /// Convert self to a value usable within a glTF asset
+    /// Convert self to a value usable within a `glTF` asset
     #[inline]
     pub fn to_gltf(self) -> f32 {
         (self as i8) as f32
@@ -241,7 +241,7 @@ impl Handedness {
 }
 
 impl Tangent {
-    /// Convert self to value usable within a glTF asset
+    /// Convert self to value usable within a `glTF` asset
     #[inline]
     pub fn to_gltf(&self) -> Vector4<f32> {
         nalgebra::vector![self.0.x, self.0.y, self.0.z, self.1.to_gltf()]

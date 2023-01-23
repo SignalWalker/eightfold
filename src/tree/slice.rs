@@ -12,7 +12,7 @@ pub struct TreeSlice<'tree, T, Idx: ArrayIndex> {
 }
 
 impl<T, Idx: ArrayIndex> Octree<T, Idx> {
-    pub fn slice(&self, index: Idx) -> Result<TreeSlice<T, Idx>, Error<Idx>> {
+    pub fn slice(&self, index: Idx) -> Result<TreeSlice<'_, T, Idx>, Error<Idx>> {
         if !self.proxies.is_init(index.as_()) {
             Err(Error::InvalidIndex(index))
         } else {
@@ -23,7 +23,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         }
     }
 
-    pub fn as_slice(&self) -> TreeSlice<T, Idx> {
+    pub fn as_slice(&self) -> TreeSlice<'_, T, Idx> {
         TreeSlice {
             tree: self,
             root: self.root,
@@ -46,7 +46,7 @@ pub trait OctreeSlice<T, Idx: ArrayIndex> {
     fn leaf_data(&self) -> &StableVec<T>;
     /// Get the [Proxy] representing the node at a given index.
     #[inline]
-    fn get(&self, i: Idx) -> Proxy<Idx> {
+    fn get(&self, _i: Idx) -> Proxy<Idx> {
         self.proxies()[self.root_idx().as_()]
     }
     /// Get the [Proxy] representing the root node of `self`.
@@ -69,7 +69,7 @@ pub trait OctreeSlice<T, Idx: ArrayIndex> {
     }
     /// Depth-first iterator through all leafs, from deepest to shallowest & nearest to farthest
     /// (by [Octant] ordering).
-    fn leaf_dfi(&self) -> LeafIter<T, Idx>;
+    fn leaf_dfi(&self) -> LeafIter<'_, T, Idx>;
 }
 
 impl<T, Idx: ArrayIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
@@ -116,7 +116,7 @@ impl<T, Idx: ArrayIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
         max_depth
     }
 
-    fn leaf_dfi(&self) -> LeafIter<T, Idx> {
+    fn leaf_dfi(&self) -> LeafIter<'_, T, Idx> {
         LeafIter {
             tree: self,
             node_stack: Vec::default(),
@@ -156,7 +156,7 @@ where
     fn height_from(&self, index: Idx) -> Idx {
         self.tree.height_from(index)
     }
-    fn leaf_dfi(&self) -> LeafIter<T, Idx> {
+    fn leaf_dfi(&self) -> LeafIter<'_, T, Idx> {
         LeafIter {
             tree: self.tree,
             node_stack: Vec::default(),

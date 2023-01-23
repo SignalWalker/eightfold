@@ -1,13 +1,13 @@
 //! Additional [Octant] implementation for spatial trees
 
-use nalgebra::{point, Point3};
-use parry3d::bounding_volume::Aabb;
+use nalgebra::{Point3};
 
-use parry3d::math::Real as ParryReal;
+
+
 
 use crate::Octant;
 
-use super::{error::Error, Float};
+use super::{Float};
 
 impl Octant {
     /// Find the Octant of a point `p` relative to another point `c`.

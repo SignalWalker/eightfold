@@ -4,7 +4,7 @@ use stablevec::StableVec;
 #[test]
 fn reserve() {}
 
-/// Test safety of StableVec<()>
+/// Test safety of `StableVec`<()>
 #[test]
 fn zst() {
     let mut zst = StableVec::<()>::new();

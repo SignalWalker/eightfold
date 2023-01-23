@@ -4,14 +4,14 @@ use eightfold_common::ArrayIndex;
 use nalgebra::{Quaternion, Vector3};
 use stablevec::StableVec;
 
-/// The value of the `generator` field in output glTF assets.
+/// The value of the `generator` field in output `glTF` assets.
 ///
-/// See also: [glTF Asset Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#asset)
+/// See also: [`glTF` Asset Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#asset)
 pub const GENERATOR_ID: &str = concat!("hedron@", env!("CARGO_PKG_VERSION"));
 
-/// Minimum glTF version required to load generated assets.
+/// Minimum `glTF` version required to load generated assets.
 ///
-/// See also: [glTF Asset Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#asset)
+/// See also: [`glTF` Asset Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#asset)
 pub const MIN_VERSION: &str = "2.0";
 
 pub struct NodeMesh<Idx: ArrayIndex> {
@@ -83,7 +83,7 @@ pub struct Asset<Idx: ArrayIndex> {
     textures: StableVec<()>,
 }
 
-/// glTF primitive topology type
+/// `glTF` primitive topology type
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Mode {
@@ -98,7 +98,7 @@ pub enum Mode {
     TriangleFan = 6,
 }
 
-/// glTF primitive attributes
+/// `glTF` primitive attributes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Attribute {
     Position,
@@ -112,7 +112,7 @@ pub enum Attribute {
 
 /// Type definitions for mesh primitive attribute data
 pub mod attribute {
-    use eightfold_common::impl_mul_div;
-    use nalgebra::{Point2, Point3, Point4, Vector3, Vector4};
-    use std::ops::{Div, DivAssign, Mul, MulAssign};
+    
+    
+    
 }

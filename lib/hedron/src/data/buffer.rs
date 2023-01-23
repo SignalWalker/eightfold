@@ -37,7 +37,7 @@ impl BufferType {
     }
 }
 
-/// A data blob which can be sent to the GPU or accessed through [BufferViews](BufferView)
+/// A data blob which can be sent to the GPU or accessed through [`BufferViews`](BufferView)
 #[derive(Default)]
 pub struct Buffer {
     pub data: Vec<u8>,
@@ -122,7 +122,7 @@ pub struct BufferView<T, B: Deref<Target = Buffer>> {
 }
 
 impl<T, B: Deref<Target = Buffer>> BufferView<T, B> {
-    /// Construct a BufferView without performing safety checks
+    /// Construct a `BufferView` without performing safety checks
     ///
     /// # Safety
     ///
@@ -139,12 +139,12 @@ impl<T, B: Deref<Target = Buffer>> BufferView<T, B> {
             _ty: std::marker::PhantomData {},
         }
     }
-    /// Construct a BufferView without performing bounds checks
+    /// Construct a `BufferView` without performing bounds checks
     ///
     /// # Panics
     ///
     /// * if `(data.data.as_ptr() as usize + offset) % std::mem::align_of::<T>() != 0`; this would result in unaligned memory access later
-    /// * if `len * size_of::<T>() > isize::MAX`; see [std::slice safety](https://doc.rust-lang.org/nightly/std/slice/fn.from_raw_parts.html#safety)
+    /// * if `len * size_of::<T>() > isize::MAX`; see [`std::slice` safety](https://doc.rust-lang.org/nightly/std/slice/fn.from_raw_parts.html#safety)
     ///
     /// # Safety
     ///
@@ -159,11 +159,11 @@ impl<T, B: Deref<Target = Buffer>> BufferView<T, B> {
                 == 0
         );
         // maintain slice length requirements
-        assert!(len * std::mem::size_of::<T>() <= isize::MAX as usize);
+        assert!(isize::try_from(len * std::mem::size_of::<T>()).is_ok());
         unsafe { Self::new_unsafe(offset, len, data) }
     }
 
-    /// Construct a BufferView
+    /// Construct a `BufferView`
     #[allow(unsafe_code)]
     pub fn new(offset: usize, len: usize, data: B) -> Result<Self, Error> {
         use std::mem::size_of;
@@ -190,7 +190,7 @@ impl<T, B: Deref<Target = Buffer>> BufferView<T, B> {
         // safety guarantees upheld by constructors
         unsafe {
             std::slice::from_raw_parts(
-                self.data.data.as_ptr().add(self.offset) as *const MaybeUninit<T>,
+                self.data.data.as_ptr().add(self.offset).cast::<std::mem::MaybeUninit<T>>(),
                 self.count,
             )
         }

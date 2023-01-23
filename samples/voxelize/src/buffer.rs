@@ -14,7 +14,7 @@ use gltf::Gltf;
 use memmap2::Mmap;
 use url::Url;
 
-/// Errors related to [BufferCaches](BufferCache).
+/// Errors related to [`BufferCaches`](BufferCache).
 #[derive(Debug, thiserror::Error)]
 pub enum BufferError {
     #[error(transparent)]
@@ -93,11 +93,11 @@ impl<'doc> From<&'doc [u8]> for BufferCacheData<'doc> {
 
 impl<'doc> BufferCacheData<'doc> {
     pub fn map_path(path: impl AsRef<Path>) -> Result<Self, io::Error> {
-        BufferFile::new(path).map(|f| Self::File(f))
+        BufferFile::new(path).map(Self::File)
     }
 
     pub fn read_path(path: impl AsRef<Path>) -> Result<Self, io::Error> {
-        fs::read(path).map(|data| Self::Owned(data))
+        fs::read(path).map(Self::Owned)
     }
 }
 
@@ -112,7 +112,7 @@ impl<'doc> Deref for BufferCacheData<'doc> {
     }
 }
 
-/// Cache glTF buffer data.
+/// Cache `glTF` buffer data.
 #[derive(Debug)]
 pub struct BufferCache<'doc> {
     doc: &'doc Gltf,
@@ -167,7 +167,7 @@ impl<'doc> BufferCache<'doc> {
 
     pub fn load_gltf_source(
         &self,
-        source: &gltf::buffer::Source,
+        source: &gltf::buffer::Source<'_>,
     ) -> Result<Arc<BufferCacheData<'doc>>, BufferError> {
         match source {
             gltf::buffer::Source::Bin => self
@@ -183,12 +183,12 @@ impl<'doc> BufferCache<'doc> {
 
     pub fn load_gltf_buffer(
         &self,
-        buffer: &gltf::Buffer,
+        buffer: &gltf::Buffer<'_>,
     ) -> Result<Arc<BufferCacheData<'doc>>, BufferError> {
         self.load_gltf_source(&buffer.source())
     }
 
-    pub fn access(&self, acc: &gltf::Accessor) -> Result<BufferAccessor, BufferError> {
+    pub fn access(&self, acc: &gltf::Accessor<'_>) -> Result<BufferAccessor<'_>, BufferError> {
         tracing::trace!(
             acc_index = acc.index(),
             acc_data_type = format!("{:?}", acc.data_type(),),

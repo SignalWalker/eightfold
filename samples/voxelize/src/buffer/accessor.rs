@@ -43,7 +43,7 @@ impl<'buf> BufferAccessor<'buf> {
 
     pub(crate) fn new(
         buffer: Arc<BufferCacheData<'buf>>,
-        base: &gltf::Accessor,
+        base: &gltf::Accessor<'_>,
     ) -> Result<Self, AccessorError> {
         let view = base.view().ok_or(AccessorError::Sparse)?;
 
@@ -66,14 +66,14 @@ impl<'buf> BufferAccessor<'buf> {
 
     /// # Safety
     ///
-    /// * T::Component::TYPE == self.data_type
-    /// * T::DIMENSIONS == self.dimensions
+    /// * `T::Component::TYPE` == `self.data_type`
+    /// * `T::DIMENSIONS` == self.dimensions
     #[allow(unsafe_code)]
     pub unsafe fn as_slice<T: BufferType>(&self) -> &'buf [T] {
         tracing::trace!("taking slice from BufferAccessor");
         unsafe {
             slice::from_raw_parts(
-                self.buffer.as_ptr().add(self.offset) as *const T,
+                self.buffer.as_ptr().add(self.offset).cast::<T>(),
                 self.count,
             )
         }
@@ -108,7 +108,7 @@ pub unsafe trait BufferType {
     const DIMENSIONS: Dimensions;
 }
 
-/// Implementations of [BufferComponent] and [BufferType] for many types that can represent glTF
+/// Implementations of [`BufferComponent`] and [`BufferType`] for many types that can represent `glTF`
 /// buffer data.
 mod _impl_traits {
     use super::{BufferComponent, BufferType};
@@ -129,7 +129,7 @@ mod _impl_traits {
     impl_bufcomponent!(u32, DataType::U32);
     impl_bufcomponent!(f32, DataType::F32);
 
-    /// Get the size in bytes of a [DataType] at compile-time.
+    /// Get the size in bytes of a [`DataType`] at compile-time.
     #[allow(unused)]
     const fn comp_bytes(comp: DataType) -> usize {
         use std::mem::size_of;
@@ -144,11 +144,11 @@ mod _impl_traits {
     }
 
     /// Get the size in bytes of an attribute type of a given [Dimensions] with a component type of
-    /// a given [DataType], at compile-time.
+    /// a given [`DataType`], at compile-time.
     #[allow(unused)]
     const fn type_bytes(ty: Dimensions, comp: DataType) -> usize {
         match ty {
-            Dimensions::Scalar => 1 * comp_bytes(comp),
+            Dimensions::Scalar => comp_bytes(comp),
             Dimensions::Vec2 => 2 * comp_bytes(comp),
             Dimensions::Vec3 => 3 * comp_bytes(comp),
             Dimensions::Vec4 => 4 * comp_bytes(comp),
@@ -158,8 +158,8 @@ mod _impl_traits {
         }
     }
 
-    /// A complicated macro that implements [BufferType] for a given type `Target` and statically validates
-    /// that implementation -- i.e. it asserts at compile-time that [BufferType] is safe to
+    /// A complicated macro that implements [`BufferType`] for a given type `Target` and statically validates
+    /// that implementation -- i.e. it asserts at compile-time that [`BufferType`] is safe to
     /// implement for `Target`.
     macro_rules! impl_buftype {
         ($t:ident<$($C:ty, $c:ident);+: $CAlias:ident> => $Target:ty) => {

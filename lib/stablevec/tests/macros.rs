@@ -1,4 +1,4 @@
-//! Ensure that StableVec macros work correctly.
+//! Ensure that `StableVec` macros work correctly.
 
 use stablevec::stablevec;
 

@@ -1,42 +1,42 @@
 #![allow(unsafe_code)]
-use std::any::Any;
-use std::collections::HashMap;
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::{io, slice};
+
+
+
+
+
+
 
 use buffer::{BufferCache, BufferError};
 use clap::Parser;
 use eightfold::spatial::VoxelOctree;
-use eightfold::Octree;
-use gltf::accessor::{DataType, Dimensions};
+
+use gltf::accessor::{DataType};
 use gltf::mesh::Mode;
-use gltf::{Gltf, Node, Scene, Semantic};
+use gltf::{Gltf, Node, Semantic};
 use nalgebra::{
-    Affine3, Isometry3, Matrix4, Point3, Quaternion, Scale3, Transform3, Translation3, Unit,
-    Vector3, Vector4,
+    Affine3, Isometry3, Matrix4, Point3, Quaternion, Translation3, Unit,
+    Vector3,
 };
-use tracing::Level;
-use url::Url;
 
-use crate::buffer::{BufferAccessor, BufferCacheData};
 
-use std::fmt::Debug;
+
+
+
+
 
 /// Functions and structures related specifically to the command-line interface.
 pub mod cli;
 
-/// Utilities for managing and accessing glTF data buffers.
+/// Utilities for managing and accessing `glTF` data buffers.
 pub mod buffer;
 
-/// Convert a glTF [Transform](gltf::scene::Transform) to a [nalgebra]
+/// Convert a `glTF` [Transform](gltf::scene::Transform) to a [nalgebra]
 /// [Affine3].
 ///
 /// An affine transformation is, in order, a non-uniform scaling, a rotation, and then a
 /// translation.
 ///
-/// A glTF transformation is stored either as an affine transformation matrix, or as separate
+/// A `glTF` transformation is stored either as an affine transformation matrix, or as separate
 /// translation, rotation, and scale components. Therefore, the most general possible kind of
 /// transformation is affine, which means that the *least* general kind of transformation we can
 /// return is an [Affine3].
@@ -104,7 +104,7 @@ pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
     }
 }
 
-/// Index a set of glTF mesh instances using an [Octree], then generate a voxel representation of
+/// Index a set of `glTF` mesh instances using an [Octree], then generate a voxel representation of
 /// those meshes from that Octree.
 pub fn main() {
     // initialize command-line interface
@@ -121,7 +121,7 @@ pub fn main() {
     for (path, doc) in cli.files.iter().map(|p| {
         (
             p, // <- holding onto the file path so we can use it in tracing output
-            Gltf::open(p).expect(&format!("failed to deserialize {:?} as glTF data", p)),
+            Gltf::open(p).unwrap_or_else(|_| panic!("failed to deserialize {p:?} as glTF data")),
         )
     }) {
         // enter a tracing span for this glTF document. This is just for nicer log output.
@@ -131,7 +131,7 @@ pub fn main() {
         // glTF data can be split into multiple files, which may be used more than once.
         // To keep things efficient, we'll use a cache for this data.
         let mut buffer_cache = BufferCache::new(&doc, path)
-            .expect(&format!("failed to construct buffer cache for {:?}", path));
+            .unwrap_or_else(|_| panic!("failed to construct buffer cache for {path:?}"));
 
         // gltf files are organized as a tree, where the root nodes are `scenes`, branch nodes are
         // `nodes`, and each `node` may have leaves of data, such as meshes or cameras.
@@ -164,8 +164,8 @@ pub fn main() {
 fn process_node<'data>(
     tree: &mut VoxelOctree<(), f32, u32>,
     voxel_size: &Vector3<f32>,
-    buffer_cache: &'data mut BufferCache,
-    node: Node,
+    buffer_cache: &'data mut BufferCache<'_>,
+    node: Node<'_>,
     parent_transform: &Affine3<f32>,
 ) -> Result<(), BufferError> {
     tracing::trace!("processing node");
@@ -183,14 +183,14 @@ fn process_node<'data>(
     Ok(())
 }
 
-/// Process a [gltf::Mesh] into an [Octree].
+/// Process a [`gltf::Mesh`] into an [Octree].
 #[allow(clippy::needless_pass_by_value)]
 fn process_mesh<'data>(
     tree: &mut VoxelOctree<(), f32, u32>,
-    voxel_size: &Vector3<f32>,
-    buffer_cache: &'data mut BufferCache,
-    mesh: gltf::Mesh,
-    transform: &Affine3<f32>,
+    _voxel_size: &Vector3<f32>,
+    buffer_cache: &'data mut BufferCache<'_>,
+    mesh: gltf::Mesh<'_>,
+    _transform: &Affine3<f32>,
 ) -> Result<(), BufferError> {
     tracing::info!("processing mesh");
     for primitive in mesh.primitives() {
@@ -198,7 +198,7 @@ fn process_mesh<'data>(
         let _p_span = tracing::trace_span!(
             "glTF_primitive",
             index = primitive.index(),
-            mode = format!("{:?}", mode)
+            mode = format!("{mode:?}")
         )
         .entered();
         let positions = match primitive.get(&Semantic::Positions) {
@@ -221,7 +221,7 @@ fn process_mesh<'data>(
                 }
             }
             Mode::Lines => {
-                for Line(a, b) in indices.map(|i| todo!("lines from indices")) {
+                for Line(a, b) in indices.map(|_i| todo!("lines from indices")) {
                     tree.grow_to_contain(a);
                     tree.grow_to_contain(b);
                     tree.insert_voxel_at(a, ()).unwrap();
@@ -256,8 +256,8 @@ pub struct Triangle<'p>(&'p Point3<f32>, &'p Point3<f32>, &'p Point3<f32>);
 
 /// Get an iterator of buffer indices from a [Primitive](gltf::Primitive).
 fn get_primitive_indices<'buf>(
-    buffer_cache: &'buf BufferCache,
-    primitive: &gltf::Primitive,
+    buffer_cache: &'buf BufferCache<'_>,
+    primitive: &gltf::Primitive<'_>,
     position_count: usize,
 ) -> Result<Box<dyn Iterator<Item = u32> + 'buf>, BufferError> {
     match primitive.indices() {
@@ -268,17 +268,17 @@ fn get_primitive_indices<'buf>(
                 DataType::U8 => {
                     let indices = ind_accessor.try_as_slice::<u8>()?;
                     tracing::trace!("indices: {:?}", indices);
-                    Ok(Box::new(indices.into_iter().copied().map(u32::from)))
+                    Ok(Box::new(indices.iter().copied().map(u32::from)))
                 }
                 DataType::U16 => {
                     let indices = ind_accessor.try_as_slice::<u16>()?;
                     tracing::trace!("indices: {:?}", indices);
-                    Ok(Box::new(indices.into_iter().copied().map(u32::from)))
+                    Ok(Box::new(indices.iter().copied().map(u32::from)))
                 }
                 DataType::U32 => {
                     let indices = ind_accessor.try_as_slice::<u32>()?;
                     tracing::trace!("indices: {:?}", indices);
-                    Ok(Box::new(indices.into_iter().copied()))
+                    Ok(Box::new(indices.iter().copied()))
                 }
                 _ => unreachable!(), // anything else would be outside of the glTF spec
             }

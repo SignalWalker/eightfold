@@ -1,6 +1,6 @@
 use eightfold::Octree;
 
-/// Ensure that Octrees can compile with any unsigned index type with width <= size_of::<usize>
+/// Ensure that Octrees can compile with any unsigned index type with width <= `size_of::`<usize>
 #[test]
 #[allow(clippy::just_underscores_and_digits)]
 fn tree_index() {

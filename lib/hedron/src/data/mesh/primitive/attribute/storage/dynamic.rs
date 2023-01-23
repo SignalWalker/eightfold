@@ -39,7 +39,7 @@ impl<Base: Borrow<[u8]>> DynAttrStore<Base> {
     /// i.e. you must be able to safely interpret `base` as `Borrow<[T]>`, for whatever `T` is described
     /// by `ty` and `comp`.
     ///
-    /// Also, data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [MaybeUninit].
+    /// Also, data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [`MaybeUninit`].
     #[inline]
     #[allow(unsafe_code)]
     pub const unsafe fn from_bytes_unsafe(
@@ -60,7 +60,7 @@ impl<Base: Borrow<[u8]>> DynAttrStore<Base> {
     ///
     /// # Safety
     ///
-    /// Data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [MaybeUninit].
+    /// Data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [`MaybeUninit`].
     #[allow(unsafe_code)]
     pub unsafe fn from_bytes_unchecked(
         base: Base,
@@ -76,7 +76,7 @@ impl<Base: Borrow<[u8]>> DynAttrStore<Base> {
     }
     /// # Safety
     ///
-    /// Data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [MaybeUninit].
+    /// Data in `base` must be initialized as the type described by `ty` and `comp`; i.e. must be able to comply with the initialization invariant of [`MaybeUninit`].
     #[allow(unsafe_code)]
     pub unsafe fn from_bytes(
         base: Base,
@@ -125,7 +125,7 @@ impl<Base: Borrow<[u8]>> DynAttrStore<Base> {
         let bytes: &[u8] = self.base.borrow();
         unsafe {
             std::slice::from_raw_parts(
-                bytes.as_ptr() as *const MaybeUninit<T>,
+                bytes.as_ptr().cast::<std::mem::MaybeUninit<T>>(),
                 bytes.len() / std::mem::size_of::<T>(),
             )
         }

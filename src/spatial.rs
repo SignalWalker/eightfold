@@ -18,7 +18,7 @@ pub use traits::*;
 use eightfold_common::ArrayIndex;
 use nalgebra::{Point3, Vector3};
 
-use crate::{Error as TreeError, Octant, Octree, OctreeSlice, Proxy, ProxyData};
+use crate::{Octant, Octree, OctreeSlice, Proxy, ProxyData};
 
 /// An [Octree] indexing a defined voxel space.
 #[derive(Debug)]
@@ -33,7 +33,7 @@ pub struct VoxelOctree<T, Real: Float, Idx: ArrayIndex> {
 }
 
 impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
-    /// Construct a [VoxelTree] encompassing the voxel at [0,0,0].
+    /// Construct a [`VoxelTree`] encompassing the voxel at [0,0,0].
     pub fn new(voxel_size: Vector3<Real>) -> Self {
         Self {
             base: Octree::new(),
@@ -101,7 +101,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     ///
     /// # Errors
     ///
-    /// * [PointOutOfBounds](Error::PointOutOfBounds) if `p` ∉ `self`.
+    /// * [`PointOutOfBounds`](Error::PointOutOfBounds) if `p` ∉ `self`.
     #[inline]
     #[allow(unsafe_code)]
     pub fn node_containing(

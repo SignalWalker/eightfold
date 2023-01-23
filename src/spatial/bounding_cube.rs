@@ -111,7 +111,7 @@ impl<Real: Float> Aabc<Real> {
     /// Given a [point](Point3) `p`, construct an [Aabc] `n` such that `n` is an octant of `self`
     /// containing `p`.
     ///
-    /// * [PointOutOfBounds](AabcError::PointOutOfBounds) if `p` ∉ `self`.
+    /// * [`PointOutOfBounds`](AabcError::PointOutOfBounds) if `p` ∉ `self`.
     pub fn child_containing(&self, p: &Point3<Real>) -> Result<Self, AabcError<Real>> {
         if !self.contains(p) {
             return Err(AabcError::PointOutOfBounds(*self, *p));
