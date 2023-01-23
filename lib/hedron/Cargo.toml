@@ -3,11 +3,14 @@ name = "hedron"
 version = "0.1.0"
 edition = "2021"
 
+repository = "https://github.com/SignalWalker/eightfold"
+license = "LGPL-3.0-or-later"
+
 [dependencies]
 stablevec = { path = "../stablevec" }
 eightfold-common = { path = "../common" }
 
-nalgebra = "^0.31"
+nalgebra = "^0.32"
 num-traits = "^0.2"
 
 thiserror = "^1.0"

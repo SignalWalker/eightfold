@@ -1,3 +1,5 @@
+pub mod primitive;
+
 /// A set of vertices, edges, and faces.
 ///
 /// # Considerations
@@ -9,4 +11,6 @@
 ///
 /// * A vertex may have some number of attributes
 ///   * TODO :: must a vertex have at least one attribute?
-pub struct Mesh {}
+pub struct Mesh {
+    primitives: Vec<()>,
+}

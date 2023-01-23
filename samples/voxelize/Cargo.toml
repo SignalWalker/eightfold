@@ -5,12 +5,30 @@ edition = "2021"
 
 [dependencies]
 eightfold = { path = "../..", features = [ "render", "tracing" ] }
+hedron = { path = "../../lib/hedron", features = [] }
 
+nalgebra = "^0.32"
+num-traits = "^0.2"
+
+tracing = "^0.1"
 tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
 time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
+thiserror = "^1.0"
 
-clap = { version = "^4.0", features = [ "derive", "env" ] }
+static_assertions = "^1.1"
+
+clap = { version = "^4", features = [ "derive", "env" ] }
 
 wgpu = { version = "^0.14" }
 
-tobj = { version = "^3.2", features = [ "reordering" ] }
+memmap2 = { version = "^0.5" }
+
+crossbeam = "^0.8"
+
+# gltf
+gltf = { optional = true, version = "^1" }
+url = { optional = true, version = "^2", features = [ ] } # for reading URIs from within glTF documents
+
+[features]
+default = [ "gltf" ]
+gltf = [ "dep:gltf", "dep:url" ]

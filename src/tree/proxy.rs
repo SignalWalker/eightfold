@@ -19,3 +19,20 @@ pub enum ProxyData<Idx: ArrayIndex> {
     /// Internal pointer to branch data
     Branch(Idx),
 }
+
+impl<Idx: ArrayIndex> Proxy<Idx> {
+    #[inline]
+    pub fn is_void(&self) -> bool {
+        matches!(self.data, ProxyData::Void)
+    }
+
+    #[inline]
+    pub fn is_leaf(&self) -> bool {
+        matches!(self.data, ProxyData::Leaf(_))
+    }
+
+    #[inline]
+    pub fn is_branch(&self) -> bool {
+        matches!(self.data, ProxyData::Branch(_))
+    }
+}

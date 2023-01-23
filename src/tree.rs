@@ -1,6 +1,7 @@
 mod error;
 mod iter;
 mod merge;
+// mod node;
 mod proxy;
 mod sample;
 mod slice;
@@ -8,7 +9,7 @@ mod slice;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ops::{Range, Shl, ShlAssign, Shr, ShrAssign},
+    ops::{Index, IndexMut, Range, Shl, ShlAssign, Shr, ShrAssign},
 };
 
 use eightfold_common::ArrayIndex;
@@ -16,12 +17,14 @@ pub use error::*;
 pub use iter::*;
 pub use merge::*;
 use nalgebra::ClosedMul;
+// pub use node::*;
 use num_traits::AsPrimitive;
 pub use proxy::*;
 pub use sample::*;
 pub use slice::*;
+use tracing::instrument;
 
-use crate::{vec::StableVec, NodePoint, Octant, VoxelPoint};
+use crate::{stablevec::StableVec, NodePoint, Octant, VoxelPoint};
 
 use stablevec::stablevec;
 
@@ -29,9 +32,17 @@ use stablevec::stablevec;
 #[derive(Debug)]
 pub struct Octree<T, Idx: ArrayIndex> {
     proxies: StableVec<Proxy<Idx>>,
+    /// Store for indices of the children of branches
     branch_data: StableVec<[Idx; 8]>,
     leaf_data: StableVec<T>,
     root: Idx,
+}
+
+impl<T, Idx: ArrayIndex> Index<Idx> for Octree<T, Idx> {
+    type Output = Proxy<Idx>;
+    fn index(&self, i: Idx) -> &Self::Output {
+        &self.proxies[i.as_()]
+    }
 }
 
 impl<T, Idx: ArrayIndex> Default for Octree<T, Idx> {
@@ -45,12 +56,12 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     pub fn new() -> Self {
         Self {
             proxies: stablevec![Proxy {
-                parent: Idx::zero(),
+                parent: Idx::ZERO,
                 data: ProxyData::Void,
             }],
             branch_data: StableVec::default(),
             leaf_data: StableVec::default(),
-            root: Idx::zero(),
+            root: Idx::ZERO,
         }
     }
 
@@ -60,10 +71,10 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     ///
     /// * `node` ∉ `self.proxies`
     pub fn depth_of_unchecked(&self, mut node: Idx) -> Idx {
-        let mut depth = Idx::zero();
+        let mut depth = Idx::ZERO;
         let mut p = self.proxies[node.as_()];
         while p.parent != node {
-            depth = depth + Idx::one();
+            depth = depth + Idx::ONE;
             node = p.parent;
             p = self.proxies[node.as_()];
         }
@@ -84,14 +95,14 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// children are returned.
     ///
     /// The children of a branch are always stored and given in [Octant] order.
-    pub fn branch(&mut self, target: Idx) -> Result<&[Idx; 8], Error<Idx>>
+    pub fn branch(&mut self, target: Idx) -> Result<(&[Idx; 8], Proxy<Idx>), Error<Idx>>
     where
         usize: AsPrimitive<Idx>,
-        u8: AsPrimitive<Idx>,
         Range<Idx>: Iterator,
     {
-        match self.proxies[target.as_()].data {
-            ProxyData::Branch(children) => Ok(&self.branch_data[children.as_()]),
+        let prox = self.proxies[target.as_()];
+        match prox.data {
+            ProxyData::Branch(children) => Ok((&self.branch_data[children.as_()], prox)),
             ProxyData::Leaf(_) => Err(Error::BranchCollision),
             ProxyData::Void => {
                 let children: [Idx; 8] = self
@@ -100,18 +111,22 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
                         parent: target,
                         data: ProxyData::Void,
                     }))
-                    .map(|i| i.as_())
+                    .map(AsPrimitive::<Idx>::as_)
                     .collect::<Vec<_>>()
                     .as_slice()
                     .try_into()
                     .unwrap();
                 let c_index = self.branch_data.push(children);
-                self.proxies[target.as_()].data = ProxyData::Branch(c_index.as_());
-                Ok(&self.branch_data[c_index])
+
+                let prox = &mut self.proxies[target.as_()];
+                prox.data = ProxyData::Branch(c_index.as_());
+
+                Ok((&self.branch_data[c_index], *prox))
             }
         }
     }
 
+    #[allow(unsafe_code)]
     fn flatten_branch(
         &mut self,
         target: Idx,
@@ -149,6 +164,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     ///
     /// If the voxel is a branch, the branch's children are voided as well.
     pub fn void(&mut self, target: Idx) -> Vec<T> {
+        tracing::trace!(?target, "voiding node");
         match self.proxies[target.as_()].data {
             ProxyData::Void => Vec::with_capacity(0),
             ProxyData::Leaf(l) => {
@@ -166,6 +182,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
+        tracing::trace!(?target, "setting leaf data");
         match self.proxies[target.as_()].data {
             ProxyData::Leaf(l) => vec![self.leaf_data.replace(l.as_(), data).unwrap()],
             ProxyData::Void => {
@@ -180,16 +197,14 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         }
     }
 
-    /// Grow a tree by adding a parent branch to the old root. The old root becomes the `oct`th
-    /// child of the new root.
-    ///
-    /// # See Also
-    /// * [Octant]
-    pub fn grow(&mut self, oct: Octant) -> Result<Idx, Error<Idx>>
+    /// Grow a tree by adding a parent branch to the old root, and return the index of the new root.
+    /// The old root becomes the [Octant] `oct` of the new root.
+    #[instrument(skip(self))]
+    pub fn grow(&mut self, oct: Octant) -> Idx
     where
-        u8: AsPrimitive<Idx>,
         usize: AsPrimitive<Idx>,
     {
+        tracing::trace!("growing octree");
         let old_root = self.root;
 
         self.proxies.reserve(8);
@@ -218,28 +233,29 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
             .as_();
         self.proxies[old_root.as_()].parent = self.root;
 
-        Ok(self.root)
+        self.root
     }
 
     /// Code shared by [voxel_at] and [voxel_at_unchecked]
+    #[inline]
     fn internal_voxel_at(&self, p: &VoxelPoint<Idx>, size: Idx) -> Idx
     where
-        Idx: Shr<u8, Output = Idx> + ShrAssign<u8> + PartialOrd + From<u8>,
+        Idx: ShrAssign<Idx> + PartialOrd,
     {
-        let mut idx: Idx = 0u8.into();
+        let mut idx: Idx = Idx::ZERO;
         let mut vox = self.proxies[self.root.as_()];
-        let mut s2 = size >> 1u8; // size / 2 // half of the cube occupied by vox
+        let mut s2 = size >> Idx::ONE; // size / 2 // half of the cube occupied by vox
         while let ProxyData::Branch(ch_idx) = vox.data {
             let children = &self.branch_data[ch_idx.as_()];
             let oct = Octant::new(p.x > s2, p.y > s2, p.z > s2);
             idx = children[oct.0 as usize];
             vox = self.proxies[idx.as_()];
-            s2 >>= 1u8; // s2 /= 2
+            s2 >>= Idx::ONE; // s2 /= 2
         }
         idx
     }
 
-    /// Get the index of the deepest voxel encompassing a specific [VoxelPoint].
+    /// Get the index of the deepest voxel containing a specific [VoxelPoint].
     ///
     /// *Warning*: this requires knowing the height of the tree, which can be an expensive
     /// calculation.
@@ -248,25 +264,25 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// * `p` ∉ 0..`self.grid_size()`
     pub fn voxel_at_unchecked(&self, p: &VoxelPoint<Idx>) -> Idx
     where
-        Idx: Shr<u8, Output = Idx> + ShrAssign<u8> + PartialOrd + From<u8> + Shl<Idx, Output = Idx>,
+        Idx: ShrAssign<Idx> + PartialOrd,
     {
         self.internal_voxel_at(p, self.grid_size())
     }
 
-    /// Get the index of the deepest voxel encompassing a specific [VoxelPoint].
+    /// Get the index of the deepest voxel containing a specific [VoxelPoint].
     ///
     /// *Warning*: this requires knowing the height of the tree, which can be an expensive
     /// calculation.
     ///
     /// # Errors
     /// * `p` ∉ 0..`self.grid_size()`
-    pub fn voxel_at<'data>(&self, p: &'data VoxelPoint<Idx>) -> Result<Idx, Error<'data, Idx>>
+    pub fn voxel_at(&self, p: &VoxelPoint<Idx>) -> Result<Idx, Error<Idx>>
     where
-        Idx: Shr<u8, Output = Idx> + ShrAssign<u8> + PartialOrd + From<u8> + Shl<Idx, Output = Idx>,
+        Idx: ShrAssign<Idx> + PartialOrd,
     {
         let size = self.grid_size();
         if p.x >= size || p.y >= size || p.z >= size {
-            return Err(Error::VoxelOutOfGrid(size, p));
+            return Err(Error::VoxelOutOfGrid(size, *p));
         }
         Ok(self.internal_voxel_at(p, size))
     }
@@ -274,28 +290,23 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// Get the index of the deepest voxel encompassing a specific [NodePoint].
     pub fn node_at(&self, p: &NodePoint<Idx>) -> Idx
     where
-        Idx: Shl<Idx, Output = Idx>
-            + ShlAssign<Idx>
-            + From<u8>
-            + Shr<u8, Output = Idx>
-            + ClosedMul
-            + ShrAssign<u8>,
+        Idx: ShlAssign<Idx> + ClosedMul + ShrAssign<Idx>,
     {
-        let mut idx = Idx::zero();
+        let mut idx = Idx::ZERO;
         let mut vox = &self.proxies[self.root.as_()];
-        let ps = Idx::one() << p.0.w; // 2ʷ // grid size at depth of `p`
-        let mut s2 = ps >> 1u8; // ps / 2 // 1/2 the size of the `p`-grid space occupied by vox
+        let ps = Idx::ONE << p.0.w; // 2ʷ // grid size at depth of `p`
+        let mut s2 = ps >> Idx::ONE; // ps / 2 // 1/2 the size of the `p`-grid space occupied by vox
         let psp = VoxelPoint::new(p.0.x * ps, p.0.y * ps, p.0.z * ps); // voxelpoint of target in
                                                                        // grid sized to depth of `p`
         while let ProxyData::Branch(ch_idx) = &vox.data {
-            if s2.is_zero() {
+            if s2 == Idx::ZERO {
                 break;
             };
             let children = &self.branch_data[ch_idx.as_()];
             let oct = Octant::new(psp.x > s2, psp.y > s2, psp.z > s2);
             idx = children[oct.0 as usize];
             vox = &self.proxies[idx.as_()];
-            s2 >>= 1; // s2 /= 2
+            s2 >>= Idx::ONE; // s2 /= 2
         }
 
         idx
@@ -367,7 +378,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         }
     }
 
-    /// [Defragment](Self::defragment) & reallocate self such that only enough memory to store
+    /// [Defragment](Self::defragment) & reallocate `self` such that only enough memory to store
     /// `self` is allocated.
     pub fn compress(&mut self)
     where
@@ -389,17 +400,14 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// # Panics
     ///
     /// * `index` ∉ `self.proxies`
-    pub fn node_point_of_unchecked(&self, mut index: Idx) -> NodePoint<Idx>
-    where
-        u8: AsPrimitive<Idx>,
-    {
-        let mut x = Idx::zero();
-        let mut y = Idx::zero();
-        let mut z = Idx::zero();
-        let mut d = Idx::zero();
+    pub fn node_point_of_unchecked(&self, mut index: Idx) -> NodePoint<Idx> {
+        let mut x = Idx::ZERO;
+        let mut y = Idx::ZERO;
+        let mut z = Idx::ZERO;
+        let mut d = Idx::ZERO;
         let mut p = self.proxies[index.as_()];
         while p.parent != index {
-            d = d + Idx::one();
+            d = d + Idx::ONE;
             match self.proxies[p.parent.as_()].data {
                 ProxyData::Branch(b_idx) => {
                     let oct = Octant(
@@ -409,9 +417,9 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
                             .unwrap()
                             .as_(),
                     );
-                    x = x + oct.i().as_();
-                    y = y + oct.j().as_();
-                    z = z + oct.k().as_();
+                    x = x + oct.i().into();
+                    y = y + oct.j().into();
+                    z = z + oct.k().into();
                 }
                 _ => unreachable!(),
             }
@@ -422,10 +430,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     }
 
     /// Calculate the [NodePoint] of a specific node.
-    pub fn node_point_of(&self, index: Idx) -> Result<NodePoint<Idx>, Error<Idx>>
-    where
-        u8: AsPrimitive<Idx>,
-    {
+    pub fn node_point_of(&self, index: Idx) -> Result<NodePoint<Idx>, Error<Idx>> {
         if !self.proxies.is_init(index.as_()) {
             return Err(Error::InvalidIndex(index));
         }
@@ -437,6 +442,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// # Panics
     ///
     /// * `node` ∉ `self.proxies`
+    #[allow(unsafe_code)]
     pub fn graft_unchecked(&mut self, mut other: Self, node: Idx)
     where
         usize: AsPrimitive<Idx>,
@@ -485,7 +491,10 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
 
     /// Merge another tree as a branch of this tree.
     ///
-    /// `node` must be the index of a [ProxyData::Void] node.
+    /// # Errors
+    ///
+    /// * [InvalidIndex](Error::InvalidIndex) if `node` is not a valid index into `self.proxies`.
+    /// * [NotAVoid](Error::NotAVoid) if `node` is not the index of a [ProxyData::Void] node.
     pub fn graft(&mut self, other: Self, node: Idx) -> Result<(), Error<Idx>>
     where
         usize: AsPrimitive<Idx>,

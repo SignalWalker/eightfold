@@ -1,4 +1,8 @@
-//! [StableVec], etc.
+#![doc = include_str!("../README.md")]
+#![allow(
+    unsafe_code,
+    // reason = "this entire crate relies heavily on scary memory tricks"
+)]
 
 use std::{
     collections::HashMap,
@@ -84,7 +88,7 @@ impl<T> StableVec<T> {
     ///
     /// * `self.data[index]` must either be `?Drop` or uninitialized
     pub unsafe fn set_unchecked(&mut self, index: usize, data: T) {
-        if !self.flags.replace_unchecked(index, true) {
+        if !unsafe { self.flags.replace_unchecked(index, true) } {
             self.count += 1;
         }
         self.data[index].write(data);
@@ -106,9 +110,9 @@ impl<T> StableVec<T> {
     ///
     /// * `index` < `self.cap`
     pub unsafe fn remove_unchecked(&mut self, index: usize) -> Option<T> {
-        if self.flags.replace_unchecked(index, false) {
+        if unsafe { self.flags.replace_unchecked(index, false) } {
             self.count -= 1;
-            Some(self.data.as_ptr().add(index).cast::<T>().read())
+            Some(unsafe { self.data.as_ptr().add(index).cast::<T>().read() })
         } else {
             None
         }
@@ -132,7 +136,7 @@ impl<T> StableVec<T> {
     /// * `self.data[index]` must already be initialized
     #[inline]
     pub const unsafe fn get_unchecked(&self, index: usize) -> &T {
-        self.data[index].assume_init_ref()
+        unsafe { self.data[index].assume_init_ref() }
     }
 
     /// Get the value at a specific index.
@@ -146,7 +150,7 @@ impl<T> StableVec<T> {
     /// * `self.data[index]` must already be initialized
     #[inline]
     pub unsafe fn get_unchecked_mut(&mut self, index: usize) -> &mut T {
-        self.data[index].assume_init_mut()
+        unsafe { self.data[index].assume_init_mut() }
     }
 
     #[inline]
@@ -279,10 +283,12 @@ impl<T> StableVec<T> {
     /// * `b` < `self.cap`
     pub unsafe fn swap_unchecked(&mut self, a: usize, b: usize) {
         let data = self.data.as_mut_ptr();
-        let ap = data.add(a);
-        let bp = data.add(b);
-        std::ptr::swap_nonoverlapping(ap, bp, 1);
-        self.flags.swap_unchecked(a, b);
+        unsafe {
+            let ap = data.add(a);
+            let bp = data.add(b);
+            std::ptr::swap_nonoverlapping(ap, bp, 1);
+            self.flags.swap_unchecked(a, b);
+        }
     }
 
     pub fn swap(&mut self, a: usize, b: usize) {

@@ -87,3 +87,23 @@ macro_rules! impl_mul_div {
         $crate::impl_op! {Div, div, DivAssign, div_assign; $lhs: $Lhs, $rhs: $Rhs; $div; $div_asn}
     };
 }
+
+/// Implement [Index](std::ops::Index) and [IndexMut](std::ops::IndexMut) for a type
+#[macro_export]
+macro_rules! impl_index {
+    ($t:ident: $T:ident$(<$($param:tt),+>)? -> $Output:ty, $idx:ident: $Idx:ty; $op_ref:expr; $op_mut:expr) => {
+      impl$(<$($param),+>)? std::ops::Index<$Idx> for $T$(<$($param),+>)? {
+        type Output = $Output;
+        #[inline]
+        fn index($t: &Self, $idx: $Idx) -> &Self::Output {
+          $op_ref
+        }
+      }
+      impl$(<$($param),+>)? std::ops::IndexMut<$Idx> for $T$(<$($param),+>)? {
+        #[inline]
+        fn index_mut($t: &mut Self, $idx: $Idx) -> &mut Self::Output {
+          $op_mut
+        }
+      }
+    };
+}

@@ -58,10 +58,9 @@ impl<T: LeafSample + Clone, Idx: ArrayIndex> Octree<T, Idx> {
         T: Clone,
         Idx: Shl<Idx, Output = Idx>
             + ShlAssign<Idx>
-            + From<u8>
-            + Shr<u8, Output = Idx>
+            + Shr<Idx, Output = Idx>
             + ClosedMul
-            + ShrAssign<u8>,
+            + ShrAssign<Idx>,
     {
         let mut node = self.node_at(point);
         let mut p = self.proxies[node.as_()];

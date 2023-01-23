@@ -10,6 +10,7 @@ pub trait LeafMerge: Sized {
 }
 
 impl<T: LeafMerge, Idx: ArrayIndex> Octree<T, Idx> {
+    #[allow(unsafe_code)]
     fn internal_merge_branch(&mut self, children_idx: Idx) -> Option<T> {
         debug_assert!(self.branch_data.is_init(children_idx.as_()));
         let mut res: Option<T> = None;

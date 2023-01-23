@@ -5,9 +5,7 @@
     html_logo_url = "https://github.com/signalwalker/eightfold/raw/main/assets/doc/logo.svg"
 )]
 // release build lints
-#![cfg_attr(not(debug_assertions), warn(missing_docs), deny(unreachable_pub))]
-// debug build lints
-#![cfg_attr(debug_assertions, warn(unreachable_pub))]
+#![cfg_attr(not(debug_assertions), deny(unreachable_pub), warn(missing_docs))]
 
 mod geom;
 #[cfg(feature = "mesh")]
@@ -20,7 +18,7 @@ mod tree;
 
 #[cfg(feature = "mesh")]
 pub use hedron;
-pub use stablevec as vec;
+pub use stablevec;
 
 use eightfold_common::ArrayIndex;
 use nalgebra::{Point3, Point4};

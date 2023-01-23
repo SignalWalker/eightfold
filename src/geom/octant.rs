@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{fmt::Display, ops::Add};
 
 use eightfold_common::ArrayIndex;
 use nalgebra::Vector3;
@@ -26,8 +26,14 @@ use crate::NodePoint;
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Octant(pub u8);
 
+impl Display for Octant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Octant").field(&self.0).finish()
+    }
+}
+
 impl Octant {
-    /// Array of all possible Octants.
+    /// Array of all possible [Octants](Octant).
     pub const ALL: [Self; 8] = [
         Octant(0),
         Octant(1),
@@ -39,29 +45,29 @@ impl Octant {
         Octant(7),
     ];
 
-    /// Construct an Octant from coordinates.
+    /// Construct an [Octant] from coordinates.
     #[inline]
     pub const fn new(i: bool, j: bool, k: bool) -> Self {
         Self(((i as u8) << 2) | ((j as u8) << 1) | (k as u8))
     }
 
-    /// The `i` component of self.
+    /// The `i` component of `self`.
     #[inline]
     pub const fn i(self) -> u8 {
         self.0 & 0b100
     }
-    /// The `j` component of self.
+    /// The `j` component of `self`.
     #[inline]
     pub const fn j(self) -> u8 {
         self.0 & 0b010
     }
-    /// The `k` component of self.
+    /// The `k` component of `self`.
     #[inline]
     pub const fn k(self) -> u8 {
         self.0 & 0b001
     }
 
-    /// Get a [Vector3\<u8\>](Vector3) from Octant `0` to self.
+    /// Get a [Vector3\<u8\>](Vector3) from [Octant] `0` to self.
     #[inline]
     pub const fn vector(self) -> Vector3<u8> {
         nalgebra::vector![self.i(), self.j(), self.k()]
@@ -86,7 +92,7 @@ macro_rules! np_add_impl {
             $np.0.x + $o.i().as_(),
             $np.0.y + $o.j().as_(),
             $np.0.z + $o.k().as_(),
-            $np.0.w + Idx::one()
+            $np.0.w + Idx::ONE
         ]
     };
 }

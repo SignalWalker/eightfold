@@ -28,13 +28,14 @@ const fn can_alloc(size: usize) -> bool {
 }
 
 fn allocate<T>(cap: usize) -> Box<[MaybeUninit<T>]> {
+    tracing::trace!(T = stringify!(T), cap, "allocating heap data");
     if is_zst::<T>() || cap == 0 {
-        unsafe {
-            return Box::from_raw(slice::from_raw_parts_mut(
+        return unsafe {
+            Box::from_raw(slice::from_raw_parts_mut(
                 NonNull::<MaybeUninit<T>>::dangling().as_mut(),
                 cap,
-            ));
-        }
+            ))
+        };
     }
 
     let layout = match Layout::array::<MaybeUninit<T>>(cap) {
@@ -86,10 +87,12 @@ fn allocate<T>(cap: usize) -> Box<[MaybeUninit<T>]> {
 // }
 
 #[inline(never)]
+#[warn(clippy::needless_pass_by_value)]
 fn finish_grow(
     new_layout: Result<Layout, LayoutError>,
     current_memory: Option<(NonNull<u8>, Layout)>,
 ) -> NonNull<u8> {
+    tracing::trace!(?new_layout, ?current_memory, "finishing stablevec grow");
     let new_layout = match new_layout {
         Ok(l) => l,
         Err(_) => capacity_overflow(),
@@ -207,6 +210,7 @@ impl<T> StableVec<T> {
     /// Ensure that at least `additional` more elements can be added to the StableVec without
     /// reallocation.
     pub fn reserve(&mut self, additional: usize) {
+        tracing::trace!(additional, "reserving capacity");
         if additional == 0 {
             return;
         }
@@ -243,6 +247,7 @@ impl<T> StableVec<T> {
 
 impl<T> StableVec<T> {
     fn leak_memory(&mut self) -> Option<(NonNull<u8>, Layout)> {
+        tracing::trace!("leaking stablevec memory");
         if is_zst::<T>() || self.capacity() == 0 {
             None
         } else {
@@ -255,6 +260,7 @@ impl<T> StableVec<T> {
         }
     }
     pub(crate) fn grow_exact(&mut self, additional: usize) {
+        tracing::trace!("growing stablevec");
         if is_zst::<T>() {
             capacity_overflow()
         }
@@ -273,6 +279,7 @@ impl<T> StableVec<T> {
         self.expand_flags(self.capacity());
     }
     pub(crate) fn grow_amortized(&mut self, additional: usize) {
+        tracing::trace!("growing stablevec");
         if is_zst::<T>() {
             capacity_overflow()
         }
@@ -291,6 +298,7 @@ impl<T> StableVec<T> {
         self.expand_flags(self.capacity());
     }
     pub(crate) unsafe fn shrink(&mut self, new_cap: usize) {
+        tracing::trace!("shrinking stablevec");
         assert!(new_cap <= self.capacity());
         let (ptr, layout) = if let Some(mem) = self.leak_memory() {
             mem
@@ -307,10 +315,12 @@ impl<T> StableVec<T> {
             std::alloc::dealloc(ptr.as_ptr(), layout);
             res
         };
-        self.data = Box::from_raw(slice::from_raw_parts_mut(
-            ptr.cast::<MaybeUninit<T>>(),
-            new_cap,
-        ));
+        self.data = unsafe {
+            Box::from_raw(slice::from_raw_parts_mut(
+                ptr.cast::<MaybeUninit<T>>(),
+                new_cap,
+            ))
+        };
         self.flags.truncate(new_cap);
         self.flags.shrink_to_fit();
     }
