@@ -3,6 +3,8 @@ name = "voxelize"
 version = "0.1.0"
 edition = "2021"
 
+publish = false
+
 [dependencies]
 eightfold = { path = "../..", features = [ "render", "tracing" ] }
 hedron = { path = "../../lib/hedron", features = [] }
