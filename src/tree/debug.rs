@@ -27,7 +27,7 @@ where
         while let Some((idx, prox, depth)) = stack.pop() {
             let indent = std::iter::repeat("  ").take(depth + 1).collect::<String>();
             match prox.data {
-                ProxyData::Void => write!(f, "\n{indent}<V @ {idx:?}>")?,
+                ProxyData::Void => {} // write!(f, "\n{indent}<V @ {idx:?}>")?,
                 ProxyData::Leaf(l_idx) => write!(
                     f,
                     "\n{indent}<L @ {idx:?}> {:?}",
