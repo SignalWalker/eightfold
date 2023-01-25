@@ -35,4 +35,22 @@ impl<Idx: ArrayIndex> Proxy<Idx> {
     pub fn is_branch(&self) -> bool {
         matches!(self.data, ProxyData::Branch(_))
     }
+
+    /// If `self` is a branch, return the index of its data.
+    #[inline]
+    pub fn branch(self) -> Option<Idx> {
+        match self.data {
+            ProxyData::Branch(idx) => Some(idx),
+            _ => None,
+        }
+    }
+
+    /// If `self` is a leaf, return the index of its data.
+    #[inline]
+    pub fn leaf(self) -> Option<Idx> {
+        match self.data {
+            ProxyData::Leaf(idx) => Some(idx),
+            _ => None,
+        }
+    }
 }

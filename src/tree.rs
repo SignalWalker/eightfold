@@ -1,7 +1,7 @@
 mod error;
 mod iter;
 mod merge;
-// mod node;
+mod node;
 mod proxy;
 mod sample;
 mod slice;
@@ -97,7 +97,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// children are returned.
     ///
     /// The children of a branch are always stored and given in [Octant] order.
-    pub fn branch(&mut self, target: Idx) -> Result<(&[Idx; 8], Proxy<Idx>), Error<Idx>>
+    pub fn split(&mut self, target: Idx) -> Result<(&[Idx; 8], Proxy<Idx>), Error<Idx>>
     where
         usize: AsPrimitive<Idx>,
         Range<Idx>: Iterator,
@@ -165,7 +165,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     /// is removed.
     ///
     /// If the voxel is a branch, the branch's children are voided as well.
-    pub fn void(&mut self, target: Idx) -> Vec<T> {
+    pub fn remove(&mut self, target: Idx) -> Vec<T> {
         match self.proxies[target.as_()].data {
             ProxyData::Void => Vec::with_capacity(0),
             ProxyData::Leaf(l) => {

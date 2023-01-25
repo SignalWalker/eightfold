@@ -166,7 +166,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
             // safety: `node_containing` already confirmed that `p` lies within `aabb`
             (oct, aabb) = unsafe { aabb.child_containing_unchecked(p) };
             (idx, prox) = {
-                let (children, prox) = self.base.branch(idx)?;
+                let (children, prox) = self.base.split(idx)?;
                 (children[oct.0 as usize], prox)
             };
             depth += Idx::ONE;
