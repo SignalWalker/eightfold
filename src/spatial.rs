@@ -1,6 +1,7 @@
 //! [Octrees](crate::Octree) with a defined relation to a 3D space.
 
 mod bounding_cube;
+mod debug;
 use std::ops::Range;
 
 pub use bounding_cube::*;
@@ -64,37 +65,42 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
+        tracing::trace!("growing tree");
         self.height += Idx::ONE;
         self.aabb = self.aabb.parent(oct);
         self.base.grow(oct)
     }
 
-    /// Grow `self` until it contains a point `p`, and return the index of the new root.
+    /// Grow `self` until it contains a point `p`, and return whether the size of `self` changed.
     ///
     /// Does nothing if `self` already contains `p`.
     #[instrument(skip(self))]
-    pub fn grow_to_contain(&mut self, p: &Point3<Real>) -> Idx
+    pub fn grow_to_contain(&mut self, p: &Point3<Real>) -> bool
     where
         usize: AsPrimitive<Idx>,
     {
-        let mut res: Idx = self.base.root_idx();
+        let mut old_aabb = self.aabb;
+        let mut grew = false;
         while !self.contains(p) {
-            res = self.grow(self.aabb.octant_of(p));
+            self.grow(!self.aabb.octant_of(p));
+            tracing::trace!(?old_aabb, new_aabb = ?self.aabb, "grew tree");
+            old_aabb = self.aabb;
+            grew = true;
         }
-        res
+        grew
     }
 
-    /// Grow `self` until it contains a bounding volume `vol`, and return the index of the new
-    /// root.
+    /// Grow `self` until it contains a bounding volume `vol`, and return whether the size of `self`
+    /// changed.
     ///
     /// Does nothing if `self` already contains `vol`.
     #[inline]
-    pub fn grow_to_contain_aabb(&mut self, vol: &Aabb<Real>) -> Idx
+    pub fn grow_to_contain_aabb(&mut self, vol: &Aabb<Real>) -> bool
     where
         usize: AsPrimitive<Idx>,
     {
-        self.grow_to_contain(&vol.mins);
-        self.grow_to_contain(&vol.maxs)
+        let g1 = self.grow_to_contain(&vol.mins);
+        self.grow_to_contain(&vol.maxs) || g1
     }
 
     /// Get the index of the deepest node containing a given [point](Point3) `p`.
@@ -127,7 +133,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     ) -> (Aabb<Real>, Idx, Proxy<Idx>, Idx) {
         let branch_data = self.base.branch_data();
         let mut depth = Idx::ZERO;
-        let mut oct = Octant::default();
+        let mut oct;
         let mut idx: Idx = self.base.root_idx();
         let mut prox = self.base.get(idx);
         let mut aabb = self.aabb;

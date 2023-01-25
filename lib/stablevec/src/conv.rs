@@ -19,6 +19,7 @@ impl<T> From<Box<[T]>> for StableVec<T> {
             data: unsafe { mem::transmute::<Box<[T]>, Box<[MaybeUninit<T>]>>(b) },
             flags: BitVec::repeat(true, len),
             count: len,
+            cap: len,
         }
     }
 }
@@ -59,6 +60,7 @@ impl<T> From<Vec<T>> for StableVec<T> {
                 res
             },
             count: len,
+            cap: len,
         }
     }
 }

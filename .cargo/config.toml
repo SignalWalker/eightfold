@@ -76,9 +76,11 @@ rustflags = [
 	"-Wnonstandard_style",
 	"-Wrust_2018_idioms",
 	# END - Embark standard lints v6 for Rust 1.55+
+	# BEGIN - Eightfold-specific lints
 	"-Dunsafe_op_in_unsafe_fn",
 	"-Dclippy::needless_pass_by_value",
 	"-Dclippy::allow_attributes_without_reason",
 	"-Wclippy::undocumented_unsafe_blocks",
 	"-Wunreachable_pub",
+	# END - Eightfold-specific lints
 ]

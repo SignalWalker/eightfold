@@ -31,6 +31,11 @@ crossbeam = "^0.8"
 gltf = { optional = true, version = "^1" }
 url = { optional = true, version = "^2", features = [ ] } # for reading URIs from within glTF documents
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = { optional = true, version = "^0.5" }
+tikv-jemalloc-ctl = { optional = true, version = "^0.5" }
+
 [features]
-default = [ "gltf" ]
+default = [ "jemalloc", "gltf" ]
 gltf = [ "dep:gltf", "dep:url" ]
+jemalloc = [ "dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl" ]

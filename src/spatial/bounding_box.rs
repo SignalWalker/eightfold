@@ -13,10 +13,16 @@ pub enum AabbError<Real: Float> {
 /// Axis-Aligned Bounding Box
 ///
 /// Similar to [`parry3d::Aabb`], except generic over the Real type.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Aabb<Real: Float> {
     pub mins: Point3<Real>,
     pub maxs: Point3<Real>,
+}
+
+impl<Real: Float> std::fmt::Debug for Aabb<Real> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Aabb({:?}->{:?})", self.mins, self.maxs)
+    }
 }
 
 impl<Real: Float> Aabb<Real> {
@@ -26,9 +32,11 @@ impl<Real: Float> Aabb<Real> {
     }
 
     #[inline]
+    #[rustfmt::skip]
     pub fn contains(&self, p: &Point3<Real>) -> bool {
         let Self { mins: i, maxs: a } = self;
-        (p.x >= i.x && p.y >= i.y && p.z >= i.z) && (p.x <= a.x && p.y <= a.y && p.z <= a.z)
+           (p.x >= i.x && p.y >= i.y && p.z >= i.z)
+        && (p.x <= a.x && p.y <= a.y && p.z <= a.z)
     }
 
     /// Determine the center of `self`.
@@ -51,39 +59,39 @@ impl<Real: Float> Aabb<Real> {
         Octant::from_center(&self.center(), p)
     }
 
-    /// Construct an [Aabb] such that `self` is an octant of the result.
+    /// Construct an [Aabb] such that `self` is the [Octant] `oct` of the result.
     #[rustfmt::skip]
     pub fn parent(&self, oct: Octant) -> Self {
         use nalgebra::point;
         let Self { mins: i, maxs: a } = self;
         let v = a - i;
         match oct.0 {
-            0 => Self { mins: *i, maxs: a + v, },
+            0 => Self { mins: *i, maxs: a + v, },              // 000 ---
             1 => Self {
-                mins: point![i.x      , i.y      , i.z - v.z],
+                mins: point![i.x      , i.y      , i.z - v.z], // 001 --Z
                 maxs: point![a.x + v.x, a.y + v.y, a.z      ],
             },
             2 => Self {
-                mins: point![i.x      , i.y - v.y, i.z      ],
+                mins: point![i.x      , i.y - v.y, i.z      ], // 010 -Y-
                 maxs: point![a.x + v.x, a.y      , a.z + v.z],
             },
             3 => Self {
-                mins: point![i.x      , i.y - v.y, i.z - v.z],
+                mins: point![i.x      , i.y - v.y, i.z - v.z], // 011 -YZ
                 maxs: point![a.x + v.x, a.y      , a.z      ],
             },
             4 => Self {
-                mins: point![i.x - v.x, i.y      , i.z      ],
+                mins: point![i.x - v.x, i.y      , i.z      ], // 100 X--
                 maxs: point![a.x      , a.y + v.y, a.z + v.z],
             },
             5 => Self {
-                mins: point![i.x - v.x, i.y      , i.z - v.z],
+                mins: point![i.x - v.x, i.y      , i.z - v.z], // 101 X-Z
                 maxs: point![a.x      , a.y + v.y, a.z      ],
             },
             6 => Self {
-                mins: point![i.x - v.x, i.y - v.y, i.z      ],
+                mins: point![i.x - v.x, i.y - v.y, i.z      ], // 110 XY-
                 maxs: point![a.x      , a.y      , a.z + v.z],
             },
-            7 => Self { mins: i - v, maxs: *a, },
+            7 => Self { mins: i - v, maxs: *a, },              // 111 XYZ
             _ => unreachable!(),
         }
     }

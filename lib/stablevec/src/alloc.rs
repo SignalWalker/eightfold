@@ -14,7 +14,8 @@ use bitvec::vec::BitVec;
 
 use crate::StableVec;
 
-const fn is_zst<T>() -> bool {
+#[inline(always)]
+pub(crate) const fn is_zst<T>() -> bool {
     mem::size_of::<T>() == 0
 }
 
@@ -28,7 +29,6 @@ const fn can_alloc(size: usize) -> bool {
 }
 
 fn allocate<T>(cap: usize) -> Box<[MaybeUninit<T>]> {
-    tracing::trace!(T = stringify!(T), cap, "allocating heap data");
     if is_zst::<T>() || cap == 0 {
         return unsafe {
             Box::from_raw(slice::from_raw_parts_mut(
@@ -92,7 +92,6 @@ fn finish_grow(
     new_layout: Result<Layout, LayoutError>,
     current_memory: Option<(NonNull<u8>, Layout)>,
 ) -> NonNull<u8> {
-    tracing::trace!(?new_layout, ?current_memory, "finishing stablevec grow");
     let new_layout = match new_layout {
         Ok(l) => l,
         Err(_) => capacity_overflow(),
@@ -131,6 +130,7 @@ impl<T: Clone> From<&[T]> for StableVec<T> {
             data: res,
             flags: BitVec::repeat(true, data.len()),
             count: data.len(),
+            cap: data.len(),
         }
     }
 }
@@ -175,7 +175,13 @@ impl<T> StableVec<T> {
     /// * `flags[i]` ⟺ `data[i]` is initialized
     /// * `flags.len()` == `data.len()`
     pub unsafe fn from_raw_parts(data: Box<[MaybeUninit<T>]>, flags: BitVec, count: usize) -> Self {
-        Self { data, flags, count }
+        let cap = data.len();
+        Self {
+            data,
+            flags,
+            count,
+            cap,
+        }
     }
 
     /// Create a new, empty [`StableVec`].
@@ -184,6 +190,7 @@ impl<T> StableVec<T> {
             data: Box::new([]),
             flags: BitVec::new(),
             count: 0,
+            cap: 0,
         }
     }
 
@@ -193,6 +200,7 @@ impl<T> StableVec<T> {
             data: allocate::<T>(cap),
             flags: BitVec::repeat(false, cap),
             count: 0,
+            cap,
         }
     }
 
@@ -210,30 +218,17 @@ impl<T> StableVec<T> {
     /// Ensure that at least `additional` more elements can be added to the `StableVec` without
     /// reallocation.
     pub fn reserve(&mut self, additional: usize) {
-        tracing::trace!(additional, "reserving capacity");
-        if additional == 0 {
-            return;
+        if let Some(amt) = additional.checked_sub(self.spare_capacity()) {
+            self.grow_amortized(amt);
         }
-        let spare = self.spare_capacity();
-        let amt = match additional.checked_sub(spare) {
-            None | Some(0) => return,
-            Some(a) => a,
-        };
-        self.grow_amortized(amt);
     }
 
     /// Ensure that at least `additional` more elements can be added to the `StableVec` without
     /// reallocation.
     pub fn reserve_exact(&mut self, additional: usize) {
-        if additional == 0 {
-            return;
+        if let Some(amt) = additional.checked_sub(self.spare_capacity()) {
+            self.grow_exact(amt);
         }
-        let spare = self.spare_capacity();
-        let amt = match additional.checked_sub(spare) {
-            None | Some(0) => return,
-            Some(a) => a,
-        };
-        self.grow_exact(amt);
     }
 
     pub fn shrink_to_fit(&mut self) {
@@ -247,62 +242,74 @@ impl<T> StableVec<T> {
 
 impl<T> StableVec<T> {
     fn leak_memory(&mut self) -> Option<(NonNull<u8>, Layout)> {
-        tracing::trace!("leaking stablevec memory");
         if is_zst::<T>() || self.capacity() == 0 {
             None
         } else {
             unsafe {
+                // must do this before raw-ifying self.data, because `self.capacity()` relies on
+                // `self.data.len()`
+                let layout = Layout::array::<MaybeUninit<T>>(self.capacity()).unwrap_unchecked();
                 Some((
-                    NonNull::new_unchecked(self.data.as_mut_ptr().cast::<u8>()),
-                    Layout::array::<MaybeUninit<T>>(self.capacity()).unwrap_unchecked(),
+                    NonNull::new_unchecked(
+                        // use `std::mem::replace` to swap `self.data` with a dummy value, so that
+                        // we don't accidentally double-free the data we're leaking here
+                        Box::<[MaybeUninit<T>]>::into_raw(std::mem::replace(
+                            &mut self.data,
+                            Box::new([]),
+                        ))
+                        .cast::<u8>(),
+                    ),
+                    layout,
                 ))
             }
         }
     }
-    pub(crate) fn grow_exact(&mut self, additional: usize) {
-        tracing::trace!("growing stablevec");
-        if is_zst::<T>() {
-            capacity_overflow()
+
+    /// # Safety
+    ///
+    /// * `self.capacity()` <= `new_cap`
+    #[inline(always)]
+    unsafe fn grow(&mut self, new_cap: usize) {
+        if !is_zst::<T>() {
+            let new_layout = Layout::array::<T>(new_cap);
+            let mem = finish_grow(new_layout, self.leak_memory());
+            unsafe {
+                self.data = Box::from_raw(slice::from_raw_parts_mut(
+                    mem.as_ptr().cast::<MaybeUninit<T>>(),
+                    new_cap,
+                ));
+            }
         }
-        let cap = match self.capacity().checked_add(additional) {
-            Some(c) => c,
-            None => capacity_overflow(),
-        };
-        let new_layout = Layout::array::<T>(cap);
-        let mem = finish_grow(new_layout, self.leak_memory());
-        unsafe {
-            self.data = Box::from_raw(slice::from_raw_parts_mut(
-                mem.as_ptr().cast::<MaybeUninit<T>>(),
-                cap,
-            ));
-        }
+        self.cap = new_cap;
         self.expand_flags(self.capacity());
+    }
+
+    pub(crate) fn grow_exact(&mut self, additional: usize) {
+        unsafe {
+            self.grow(match self.capacity().checked_add(additional) {
+                Some(c) => c,
+                None => capacity_overflow(),
+            })
+        }
     }
     pub(crate) fn grow_amortized(&mut self, additional: usize) {
-        tracing::trace!("growing stablevec");
-        if is_zst::<T>() {
-            capacity_overflow()
-        }
-        let cap = match self.capacity().checked_add(additional) {
-            Some(c) => c.max(self.len_init() * 2).max(Self::MIN_NON_ZERO_CAP),
-            None => capacity_overflow(),
-        };
-        let new_layout = Layout::array::<T>(cap);
-        let mem = finish_grow(new_layout, self.leak_memory());
         unsafe {
-            self.data = Box::from_raw(slice::from_raw_parts_mut(
-                mem.as_ptr().cast::<MaybeUninit<T>>(),
-                cap,
-            ));
+            self.grow(match self.capacity().checked_add(additional) {
+                Some(c) => c.max(self.len_init() * 2).max(Self::MIN_NON_ZERO_CAP),
+                None => capacity_overflow(),
+            })
         }
-        self.expand_flags(self.capacity());
     }
+
+    /// # Safety
+    ///
+    /// * `self.capacity()` >= `new_cap`
     pub(crate) unsafe fn shrink(&mut self, new_cap: usize) {
-        tracing::trace!("shrinking stablevec");
-        assert!(new_cap <= self.capacity());
+        debug_assert!(new_cap <= self.capacity());
         let (ptr, layout) = if let Some(mem) = self.leak_memory() {
             mem
         } else {
+            // `T` is a zero-sized type
             return;
         };
         let ptr = unsafe {

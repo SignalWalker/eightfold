@@ -11,6 +11,7 @@ use std::{
     ptr,
 };
 
+use alloc::is_zst;
 use bitvec::vec::BitVec;
 
 mod alloc;
@@ -47,6 +48,8 @@ pub struct StableVec<T> {
     flags: BitVec<usize, bitvec::order::Lsb0>,
     /// Number of initialized values in the array
     count: usize,
+    /// Total size of the array
+    cap: usize,
 }
 
 impl<T> Default for StableVec<T> {
@@ -59,7 +62,7 @@ impl<T> StableVec<T> {
     /// Get the total size of this `StableVec`.
     #[inline(always)]
     pub const fn capacity(&self) -> usize {
-        self.data.len()
+        self.cap
     }
 
     /// Get the number of empty slots in this `StableVec`.
@@ -88,8 +91,11 @@ impl<T> StableVec<T> {
     ///
     /// * `self.data[index]` must either be `?Drop` or uninitialized
     pub unsafe fn set_unchecked(&mut self, index: usize, data: T) {
-        if !unsafe { self.flags.replace_unchecked(index, true) } {
+        if unsafe { !self.flags.replace_unchecked(index, true) } {
             self.count += 1;
+        }
+        if is_zst::<T>() {
+            return;
         }
         self.data[index].write(data);
     }
@@ -171,7 +177,7 @@ impl<T> StableVec<T> {
     }
 
     pub fn push(&mut self, data: T) -> usize {
-        let index = match self.flags.first_one() {
+        let index = match self.flags.first_zero() {
             Some(i) => i,
             None => {
                 self.grow_amortized(1);
@@ -182,38 +188,17 @@ impl<T> StableVec<T> {
         index
     }
 
-    pub fn replace(&mut self, index: usize, data: T) -> Option<T> {
-        if index >= self.capacity() {
-            return None;
-        }
-        if !unsafe { self.flags.replace_unchecked(index, true) } {
-            self.count += 1;
-            unsafe {
-                self.set_unchecked(index, data);
-                None
-            }
-        } else {
-            unsafe {
-                let res = self.data[index].assume_init_read();
-                self.set_unchecked(index, data);
-                Some(res)
-            }
-        }
-    }
-
     /// Drop everything.
     pub fn clear(&mut self) {
         // TODO :: skip this for T: ?Drop
         if mem::size_of::<T>() != 0 {
-            unsafe {
-                let p = self.data.as_mut_ptr();
-                for i in self.flags.iter_ones() {
-                    ptr::drop_in_place::<T>(&mut *p.add(i).cast::<T>());
-                }
+            let p = self.data.as_mut_ptr();
+            for i in self.flags.iter_ones() {
+                unsafe { ptr::drop_in_place::<T>(&mut *p.add(i).cast::<T>()) };
             }
         }
         self.count = 0;
-        self.flags.clear();
+        self.flags = bitvec::bitvec![0; self.cap];
     }
 
     #[inline]
@@ -361,9 +346,7 @@ impl<T> StableVec<T> {
 
 impl<T> Drop for StableVec<T> {
     fn drop(&mut self) {
-        for i in self.flags.iter_ones() {
-            unsafe { self.data[i].as_mut_ptr().drop_in_place() };
-        }
+        self.clear()
     }
 }
 

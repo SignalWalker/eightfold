@@ -2,7 +2,7 @@ use eightfold_common::ArrayIndex;
 use num_traits::AsPrimitive;
 use stablevec::StableVec;
 
-use crate::{Error, LeafIter, NodePoint, Octant, Octree, Proxy, ProxyData};
+use crate::{Error, LeafIter, NodeIter, NodePoint, Octant, Octree, Proxy, ProxyData};
 
 /// A slice representing a subset of an [Octree].
 #[derive(Debug, Clone, Copy)]
@@ -70,6 +70,9 @@ pub trait OctreeSlice<T, Idx: ArrayIndex> {
     /// Depth-first iterator through all leafs, from deepest to shallowest & nearest to farthest
     /// (by [Octant] ordering).
     fn leaf_dfi(&self) -> LeafIter<'_, T, Idx>;
+
+    /// Depth-first iterator through all nodes, by [Octant] ordering.
+    fn node_dfi(&self) -> NodeIter<'_, T, Idx>;
 }
 
 impl<T, Idx: ArrayIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
@@ -127,6 +130,18 @@ impl<T, Idx: ArrayIndex> OctreeSlice<T, Idx> for Octree<T, Idx> {
             )),
         }
     }
+
+    fn node_dfi(&self) -> NodeIter<'_, T, Idx> {
+        NodeIter {
+            tree: self,
+            node_stack: Vec::default(),
+            curr_node: Some((
+                &self.proxies[self.root.as_()],
+                Octant(0),
+                NodePoint::new(Idx::ZERO, Idx::ZERO, Idx::ZERO, Idx::ZERO),
+            )),
+        }
+    }
 }
 
 impl<'tree, T, Idx: ArrayIndex> OctreeSlice<T, Idx> for TreeSlice<'tree, T, Idx>
@@ -158,6 +173,18 @@ where
     }
     fn leaf_dfi(&self) -> LeafIter<'_, T, Idx> {
         LeafIter {
+            tree: self.tree,
+            node_stack: Vec::default(),
+            curr_node: Some((
+                &self.tree.proxies[self.root.as_()],
+                Octant(0),
+                self.tree.node_point_of_unchecked(self.root),
+            )),
+        }
+    }
+
+    fn node_dfi(&self) -> NodeIter<'_, T, Idx> {
+        NodeIter {
             tree: self.tree,
             node_stack: Vec::default(),
             curr_node: Some((

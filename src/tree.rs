@@ -6,6 +6,8 @@ mod proxy;
 mod sample;
 mod slice;
 
+mod debug;
+
 use std::{
     collections::HashMap,
     convert::TryInto,
@@ -164,7 +166,6 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     ///
     /// If the voxel is a branch, the branch's children are voided as well.
     pub fn void(&mut self, target: Idx) -> Vec<T> {
-        tracing::trace!(?target, "voiding node");
         match self.proxies[target.as_()].data {
             ProxyData::Void => Vec::with_capacity(0),
             ProxyData::Leaf(l) => {
@@ -182,9 +183,8 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
-        tracing::trace!(?target, "setting leaf data");
         match self.proxies[target.as_()].data {
-            ProxyData::Leaf(l) => vec![self.leaf_data.replace(l.as_(), data).unwrap()],
+            ProxyData::Leaf(l) => vec![self.leaf_data.set(l.as_(), data).unwrap()],
             ProxyData::Void => {
                 self.proxies[target.as_()].data = ProxyData::Leaf(self.leaf_data.push(data).as_());
                 Vec::with_capacity(0)
@@ -204,10 +204,10 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
-        tracing::trace!("growing octree");
         let old_root = self.root;
 
         self.proxies.reserve(8);
+
         let mut children: Vec<Idx> = self
             .proxies
             .push_iter(
@@ -217,9 +217,10 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
                 })
                 .take(7),
             )
-            .map(|i| i.as_())
+            .map(usize::as_)
             .collect::<Vec<Idx>>();
-        children.insert(oct.0 as usize, old_root);
+        children.insert(usize::from(oct), old_root);
+
         self.root = self
             .proxies
             .push(Proxy {

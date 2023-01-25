@@ -15,6 +15,42 @@ pub mod cli;
 /// Utilities for managing and accessing `glTF` data buffers.
 pub mod buffer;
 
+#[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+#[global_allocator]
+static GLOBAL_ALLOCATOR: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+fn trace_memory_stats(prev: Option<(usize, usize)>) -> (usize, usize) {
+    use tikv_jemalloc_ctl::{epoch, stats};
+    #[inline]
+    fn sub_to_isize(a: usize, b: usize) -> isize {
+        match a.overflowing_sub(b) {
+            (val, false) => isize::try_from(val).unwrap(),
+            (val, true) => unsafe { std::mem::transmute::<usize, isize>(val) },
+        }
+    }
+    epoch::advance().unwrap();
+    let allocated = stats::allocated::read().unwrap();
+    let resident = stats::resident::read().unwrap();
+    tracing::info!(
+        "Memory: {}B / {}B{} (Allocated/Resident)",
+        allocated,
+        resident,
+        if let Some((pa, pr)) = prev {
+            format!(
+                " (Δ {}B, {}B)",
+                sub_to_isize(allocated, pa),
+                sub_to_isize(resident, pr)
+            )
+        } else {
+            "".to_string()
+        }
+    );
+    (allocated, resident)
+}
+
+type Leaf = u8;
+
 /// Convert a `glTF` [Transform](gltf::scene::Transform) to a [nalgebra]
 /// [Affine3].
 ///
@@ -96,11 +132,14 @@ pub fn main() {
     let cli = cli::Cli::parse();
     crate::cli::initialize_tracing(&cli.log_filter, cli.log_format);
 
+    #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+    let memstats = trace_memory_stats(None);
+
     // prepare transformation applied to each mesh before processing
     let base_transform = Affine3::from_matrix_unchecked(cli.mesh_scale.to_homogeneous());
 
     // build the octree
-    let mut tree: VoxelOctree<(), f32, u32> = VoxelOctree::new(cli.voxel_size);
+    let mut tree: VoxelOctree<Leaf, f32, u32> = VoxelOctree::new(cli.voxel_size);
 
     // "for each file input on the command line (mapped as a [Gltf])..."
     for (path, doc) in cli.files.iter().map(|p| {
@@ -142,12 +181,17 @@ pub fn main() {
             }
         }
     }
+
+    #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+    trace_memory_stats(Some(memstats));
+
+    tracing::debug!(%tree, "done");
 }
 
 /// Process a [Node] and its descendants into an [Octree].
 #[tracing::instrument(name = "glTF_node", skip(tree, buffer_cache, node, parent_transform), fields(index = node.index(), name = node.name()))]
 fn process_node<'data>(
-    tree: &mut VoxelOctree<(), f32, u32>,
+    tree: &mut VoxelOctree<Leaf, f32, u32>,
     voxel_size: &Vector3<f32>,
     buffer_cache: &'data mut BufferCache<'_>,
     node: Node<'_>,
@@ -171,11 +215,11 @@ fn process_node<'data>(
 /// Process a [`gltf::Mesh`] into an [Octree].
 #[allow(clippy::needless_pass_by_value)]
 fn process_mesh<'data>(
-    tree: &mut VoxelOctree<(), f32, u32>,
-    _voxel_size: &Vector3<f32>,
+    tree: &mut VoxelOctree<Leaf, f32, u32>,
+    voxel_size: &Vector3<f32>,
     buffer_cache: &'data mut BufferCache<'_>,
     mesh: gltf::Mesh<'_>,
-    _transform: &Affine3<f32>,
+    transform: &Affine3<f32>,
 ) -> Result<(), BufferError> {
     tracing::info!("processing mesh");
     for primitive in mesh.primitives() {
@@ -198,36 +242,43 @@ fn process_mesh<'data>(
 
         match mode {
             Mode::Points => {
-                for point in indices.map(|i| &positions[i as usize]) {
-                    tree.grow_to_contain(point);
+                tracing::trace!("voxelizing points...");
+                for point in indices
+                    .map(|i| &positions[i as usize])
+                    .map(|p| transform.transform_point(p))
+                {
+                    tracing::trace!(%point.x, %point.y, %point.z, "point");
+                    tree.grow_to_contain(&point);
                     // this should never fail, because we just ensured that `point` lies within the
                     // space encompassed by `tree`
-                    tree.insert_voxel_at(point, ()).unwrap();
+                    tree.insert_voxel_at(&point, Leaf::default()).unwrap();
                 }
             }
             Mode::Lines => {
                 for Line(a, b) in indices.map(|_i| todo!("lines from indices")) {
-                    tree.grow_to_contain(a);
-                    tree.grow_to_contain(b);
-                    tree.insert_voxel_at(a, ()).unwrap();
-                    tree.insert_voxel_at(b, ()).unwrap();
+                    tree.grow_to_contain(&a);
+                    tree.grow_to_contain(&b);
+                    tree.insert_voxel_at(&a, Leaf::default()).unwrap();
+                    tree.insert_voxel_at(&b, Leaf::default()).unwrap();
                 }
             }
             Mode::Triangles => {
                 let indices = indices.collect::<Vec<_>>();
+                tracing::trace!(amt = indices.len() / 3, "voxelizing triangles");
                 for Triangle(a, b, c) in indices.chunks_exact(3).map(|i| {
                     Triangle(
-                        &positions[i[0] as usize],
-                        &positions[i[1] as usize],
-                        &positions[i[2] as usize],
+                        transform.transform_point(&positions[i[0] as usize]),
+                        transform.transform_point(&positions[i[1] as usize]),
+                        transform.transform_point(&positions[i[2] as usize]),
                     )
                 }) {
-                    tree.grow_to_contain(a);
-                    tree.grow_to_contain(b);
-                    tree.grow_to_contain(c);
-                    tree.insert_voxel_at(a, ()).unwrap();
-                    tree.insert_voxel_at(b, ()).unwrap();
-                    tree.insert_voxel_at(c, ()).unwrap();
+                    tracing::trace!(?a, ?b, ?c, "triangle");
+                    tree.grow_to_contain(&a);
+                    tree.grow_to_contain(&b);
+                    tree.grow_to_contain(&c);
+                    tree.insert_voxel_at(&a, Leaf::default()).unwrap();
+                    tree.insert_voxel_at(&b, Leaf::default()).unwrap();
+                    tree.insert_voxel_at(&c, Leaf::default()).unwrap();
                 }
             }
             _ => todo!(),
@@ -236,8 +287,8 @@ fn process_mesh<'data>(
     Ok(())
 }
 
-pub struct Line<'p>(&'p Point3<f32>, &'p Point3<f32>);
-pub struct Triangle<'p>(&'p Point3<f32>, &'p Point3<f32>, &'p Point3<f32>);
+pub struct Line(Point3<f32>, Point3<f32>);
+pub struct Triangle(Point3<f32>, Point3<f32>, Point3<f32>);
 
 /// Get an iterator of buffer indices from a [Primitive](gltf::Primitive).
 fn get_primitive_indices<'buf>(
@@ -252,17 +303,17 @@ fn get_primitive_indices<'buf>(
             match ind_accessor.data_type {
                 DataType::U8 => {
                     let indices = ind_accessor.try_as_slice::<u8>()?;
-                    tracing::trace!("indices: {:?}", indices);
+                    // tracing::trace!("indices: {:?}", indices);
                     Ok(Box::new(indices.iter().copied().map(u32::from)))
                 }
                 DataType::U16 => {
                     let indices = ind_accessor.try_as_slice::<u16>()?;
-                    tracing::trace!("indices: {:?}", indices);
+                    // tracing::trace!("indices: {:?}", indices);
                     Ok(Box::new(indices.iter().copied().map(u32::from)))
                 }
                 DataType::U32 => {
                     let indices = ind_accessor.try_as_slice::<u32>()?;
-                    tracing::trace!("indices: {:?}", indices);
+                    // tracing::trace!("indices: {:?}", indices);
                     Ok(Box::new(indices.iter().copied()))
                 }
                 _ => unreachable!(), // anything else would be outside of the glTF spec
