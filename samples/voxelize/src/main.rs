@@ -247,7 +247,6 @@ fn process_mesh<'data>(
                     .map(|i| &positions[i as usize])
                     .map(|p| transform.transform_point(p))
                 {
-                    tracing::trace!(%point.x, %point.y, %point.z, "point");
                     tree.grow_to_contain(&point);
                     // this should never fail, because we just ensured that `point` lies within the
                     // space encompassed by `tree`
@@ -274,7 +273,6 @@ fn process_mesh<'data>(
                         transform.transform_point(&positions[i[2] as usize]),
                     )
                 }) {
-                    tracing::trace!(?a, ?b, ?c, "triangle");
                     tree.grow_to_contain(&a);
                     tree.grow_to_contain(&b);
                     tree.grow_to_contain(&c);

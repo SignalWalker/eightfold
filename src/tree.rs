@@ -105,7 +105,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         let prox = self.proxies[target.as_()];
         match prox.data {
             ProxyData::Branch(children) => Ok((&self.branch_data[children.as_()], prox)),
-            ProxyData::Leaf(_) => Err(Error::BranchCollision),
+            ProxyData::Leaf(_) => Err(Error::CannotBranchLeaf),
             ProxyData::Void => {
                 let children: [Idx; 8] = self
                     .proxies
@@ -199,7 +199,6 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
 
     /// Grow a tree by adding a parent branch to the old root, and return the index of the new root.
     /// The old root becomes the [Octant] `oct` of the new root.
-    #[instrument(skip(self))]
     pub fn grow(&mut self, oct: Octant) -> Idx
     where
         usize: AsPrimitive<Idx>,

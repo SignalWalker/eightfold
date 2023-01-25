@@ -60,12 +60,10 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
 
     /// Grow `self` such that the current root becomes the [Octant] `oct` of the new root, and
     /// return the index of the new root.
-    #[instrument(skip(self))]
     pub fn grow(&mut self, oct: Octant) -> Idx
     where
         usize: AsPrimitive<Idx>,
     {
-        tracing::trace!("growing tree");
         self.height += Idx::ONE;
         self.aabb = self.aabb.parent(oct);
         self.base.grow(oct)
@@ -79,13 +77,14 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
-        let mut old_aabb = self.aabb;
+        let old_aabb = self.aabb;
         let mut grew = false;
         while !self.contains(p) {
             self.grow(!self.aabb.octant_of(p));
-            tracing::trace!(?old_aabb, new_aabb = ?self.aabb, "grew tree");
-            old_aabb = self.aabb;
             grew = true;
+        }
+        if grew {
+            tracing::trace!(?old_aabb, new_aabb = ?self.aabb, "grew tree");
         }
         grew
     }
@@ -152,7 +151,6 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     ///
     /// * [PointOutOfBounds](Error::PointOutOfBounds) if `p` ∉ `self`.
     #[allow(unsafe_code)]
-    #[instrument(skip(self, data))]
     pub fn insert_voxel_at(
         &mut self,
         p: &Point3<Real>,
