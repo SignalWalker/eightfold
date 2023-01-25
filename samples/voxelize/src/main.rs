@@ -262,6 +262,8 @@ fn process_mesh<'data>(
                     tree.insert_voxel_at(&b, Leaf::default()).unwrap();
                 }
             }
+            Mode::LineLoop => todo!("process line loops"),
+            Mode::LineStrip => todo!("process line strips"),
             Mode::Triangles => {
                 let indices = indices.collect::<Vec<_>>();
                 tracing::trace!(amt = indices.len() / 3, "voxelizing triangles");
@@ -281,7 +283,8 @@ fn process_mesh<'data>(
                     tree.insert_voxel_at(&c, Leaf::default()).unwrap();
                 }
             }
-            _ => todo!(),
+            Mode::TriangleStrip => todo!("process triangle strips"),
+            Mode::TriangleFan => todo!("process triangle fans"),
         };
     }
     Ok(())
