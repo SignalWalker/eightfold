@@ -24,5 +24,7 @@ pub enum Error<Idx: ArrayIndex> {
     #[error("Attempted to add a child to a position already occupied: {0:?}")]
     ChildCollision(Idx),
     #[error("Attempted to make a leaf into a branch")]
-    CannotBranchLeaf,
+    CannotSplitLeaf,
+    #[error("Attempted to set leaf data of branch")]
+    CannotInsertIntoBranch,
 }

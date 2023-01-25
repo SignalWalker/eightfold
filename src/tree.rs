@@ -19,7 +19,7 @@ pub use error::*;
 pub use iter::*;
 pub use merge::*;
 use nalgebra::ClosedMul;
-// pub use node::*;
+pub use node::*;
 use num_traits::AsPrimitive;
 pub use proxy::*;
 pub use sample::*;
@@ -105,7 +105,7 @@ impl<T, Idx: ArrayIndex> Octree<T, Idx> {
         let prox = self.proxies[target.as_()];
         match prox.data {
             ProxyData::Branch(children) => Ok((&self.branch_data[children.as_()], prox)),
-            ProxyData::Leaf(_) => Err(Error::CannotBranchLeaf),
+            ProxyData::Leaf(_) => Err(Error::CannotSplitLeaf),
             ProxyData::Void => {
                 let children: [Idx; 8] = self
                     .proxies

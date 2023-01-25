@@ -19,7 +19,7 @@ pub use traits::*;
 use eightfold_common::ArrayIndex;
 use nalgebra::{Point3, Vector3};
 
-use crate::{Octant, Octree, OctreeSlice, Proxy, ProxyData};
+use crate::{LeafMut, Node, NodeMut, Octant, Octree, OctreeSlice, Proxy, ProxyData};
 
 /// An [Octree] indexing a defined voxel space.
 #[derive(Debug)]
@@ -109,10 +109,10 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     /// * [`PointOutOfBounds`](Error::PointOutOfBounds) if `p` ∉ `self`.
     #[inline]
     #[allow(unsafe_code)]
-    pub fn node_containing(
-        &self,
+    pub fn node_containing<'tree>(
+        &'tree self,
         p: &Point3<Real>,
-    ) -> Result<(Aabb<Real>, Idx, Proxy<Idx>, Idx), Error<Idx, Real>> {
+    ) -> Result<(Aabb<Real>, Node<'tree, T, Idx>, Idx), Error<Idx, Real>> {
         if !self.aabb.contains(p) {
             return Err(Error::PointOutOfBounds(self.aabb, *p));
         }
@@ -126,10 +126,10 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     /// * When `p` ∉ `self`, the result is undefined.
     #[inline]
     #[allow(unsafe_code)]
-    pub unsafe fn node_containing_unchecked(
-        &self,
+    pub unsafe fn node_containing_unchecked<'tree>(
+        &'tree self,
         p: &Point3<Real>,
-    ) -> (Aabb<Real>, Idx, Proxy<Idx>, Idx) {
+    ) -> (Aabb<Real>, Node<'tree, T, Idx>, Idx) {
         let branch_data = self.base.branch_data();
         let mut depth = Idx::ZERO;
         let mut oct;
@@ -142,7 +142,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
             prox = self.base.get(idx);
             depth += Idx::ONE;
         }
-        (aabb, idx, prox, depth)
+        (aabb, self.base.node(idx).unwrap(), depth)
     }
 
     /// Insert data into a leaf node encompassing the voxel at point `p`.
@@ -150,28 +150,50 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     /// # Errors
     ///
     /// * [PointOutOfBounds](Error::PointOutOfBounds) if `p` ∉ `self`.
-    #[allow(unsafe_code)]
-    pub fn insert_voxel_at(
-        &mut self,
+    // #[allow(unsafe_code)]
+    // pub fn insert_voxel_at(
+    //     &mut self,
+    //     p: &Point3<Real>,
+    //     data: T,
+    // ) -> Result<(Idx, Proxy<Idx>, Option<T>), Error<Idx, Real>>
+    // where
+    //     usize: AsPrimitive<Idx>,
+    //     Range<Idx>: Iterator,
+    // {
+    //     let mut oct;
+    //     let (mut aabb, node, mut depth) = self.node_containing(p)?;
+    //     let (_, mut prox, mut idx, _) = node.into_inner();
+    //     while depth != self.height {
+    //         // safety: `node_containing` already confirmed that `p` lies within `aabb`
+    //         (oct, aabb) = unsafe { aabb.child_containing_unchecked(p) };
+    //         (idx, prox) = {
+    //             let (children, prox) = self.base.split(idx)?;
+    //             (children[usize::from(oct)], prox)
+    //         };
+    //         depth += Idx::ONE;
+    //     }
+    //     Ok((idx, prox, self.base.set_leaf(idx, data).pop()))
+    // }
+
+    /// Gets a mutable reference to a leaf node encompassing the voxel at point `p`. The node and
+    /// its parents will be created if it doesn't exist.
+    pub fn node_at_mut<'tree>(
+        &'tree mut self,
         p: &Point3<Real>,
-        data: T,
-    ) -> Result<(Idx, Proxy<Idx>, Option<T>), Error<Idx, Real>>
+    ) -> Result<NodeMut<'tree, T, Idx>, Error<Idx, Real>>
     where
         usize: AsPrimitive<Idx>,
         Range<Idx>: Iterator,
     {
-        let mut oct;
-        let (mut aabb, mut idx, mut prox, mut depth) = self.node_containing(p)?;
+        let mut oct: Octant;
+        let (mut aabb, node, mut depth) = self.node_containing(p)?;
+        let mut node = self.base.node_mut(node.index()).unwrap();
         while depth != self.height {
-            // safety: `node_containing` already confirmed that `p` lies within `aabb`
             (oct, aabb) = unsafe { aabb.child_containing_unchecked(p) };
-            (idx, prox) = {
-                let (children, prox) = self.base.split(idx)?;
-                (children[oct.0 as usize], prox)
-            };
+            node = node.split()?.child(oct);
             depth += Idx::ONE;
         }
-        Ok((idx, prox, self.base.set_leaf(idx, data).pop()))
+        Ok(node)
     }
 }
 

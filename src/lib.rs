@@ -20,7 +20,7 @@ mod tree;
 pub use hedron;
 pub use stablevec;
 
-use eightfold_common::ArrayIndex;
+pub use eightfold_common::ArrayIndex;
 use nalgebra::{Point3, Point4};
 // pub mod slice;
 // pub mod view;

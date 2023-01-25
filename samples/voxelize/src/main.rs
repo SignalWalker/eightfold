@@ -2,7 +2,8 @@
 
 use buffer::{BufferCache, BufferError};
 use clap::Parser;
-use eightfold::spatial::VoxelOctree;
+use eightfold::spatial::{Float, VoxelOctree};
+use eightfold::ArrayIndex;
 
 use gltf::accessor::DataType;
 use gltf::mesh::Mode;
@@ -18,6 +19,16 @@ pub mod buffer;
 #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
 #[global_allocator]
 static GLOBAL_ALLOCATOR: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error<Idx: ArrayIndex, Real: Float> {
+    #[error(transparent)]
+    Buffer(#[from] BufferError),
+    #[error(transparent)]
+    Tree(#[from] eightfold::Error<Idx>),
+    #[error(transparent)]
+    SpatialTree(#[from] eightfold::spatial::Error<Idx, Real>),
+}
 
 #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
 fn trace_memory_stats(prev: Option<(usize, usize)>) -> (usize, usize) {
@@ -49,7 +60,7 @@ fn trace_memory_stats(prev: Option<(usize, usize)>) -> (usize, usize) {
     (allocated, resident)
 }
 
-type Leaf = u8;
+type Leaf = Vec<u8>;
 
 /// Convert a `glTF` [Transform](gltf::scene::Transform) to a [nalgebra]
 /// [Affine3].
@@ -196,7 +207,7 @@ fn process_node<'data>(
     buffer_cache: &'data mut BufferCache<'_>,
     node: Node<'_>,
     parent_transform: &Affine3<f32>,
-) -> Result<(), BufferError> {
+) -> Result<(), Error<u32, f32>> {
     tracing::trace!("processing node");
     // Each node has a transform relative to its parent. We need to keep track of this
     // so that we know the location of each mesh instance in world space. The glTF
@@ -220,7 +231,7 @@ fn process_mesh<'data>(
     buffer_cache: &'data mut BufferCache<'_>,
     mesh: gltf::Mesh<'_>,
     transform: &Affine3<f32>,
-) -> Result<(), BufferError> {
+) -> Result<(), Error<u32, f32>> {
     tracing::info!("processing mesh");
     for primitive in mesh.primitives() {
         let mode = primitive.mode();
@@ -231,7 +242,10 @@ fn process_mesh<'data>(
         )
         .entered();
         let positions = match primitive.get(&Semantic::Positions) {
-            Some(p) => buffer_cache.access(&p)?.try_as_slice::<Point3<f32>>()?,
+            Some(p) => buffer_cache
+                .access(&p)?
+                .try_as_slice::<Point3<f32>>()
+                .map_err(BufferError::from)?,
             None => {
                 tracing::error!("skipping primitive: no position attribute");
                 continue;
@@ -250,15 +264,21 @@ fn process_mesh<'data>(
                     tree.grow_to_contain(&point);
                     // this should never fail, because we just ensured that `point` lies within the
                     // space encompassed by `tree`
-                    tree.insert_voxel_at(&point, Leaf::default()).unwrap();
+                    tree.node_at_mut(&point)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
                 }
             }
             Mode::Lines => {
                 for Line(a, b) in indices.map(|_i| todo!("lines from indices")) {
                     tree.grow_to_contain(&a);
                     tree.grow_to_contain(&b);
-                    tree.insert_voxel_at(&a, Leaf::default()).unwrap();
-                    tree.insert_voxel_at(&b, Leaf::default()).unwrap();
+                    tree.node_at_mut(&a)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
+                    tree.node_at_mut(&b)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
                 }
             }
             Mode::LineLoop => todo!("process line loops"),
@@ -276,9 +296,15 @@ fn process_mesh<'data>(
                     tree.grow_to_contain(&a);
                     tree.grow_to_contain(&b);
                     tree.grow_to_contain(&c);
-                    tree.insert_voxel_at(&a, Leaf::default()).unwrap();
-                    tree.insert_voxel_at(&b, Leaf::default()).unwrap();
-                    tree.insert_voxel_at(&c, Leaf::default()).unwrap();
+                    tree.node_at_mut(&a)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
+                    tree.node_at_mut(&b)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
+                    tree.node_at_mut(&c)?
+                        .leaf_data_or_insert_with(Vec::default)?
+                        .push(0);
                 }
             }
             Mode::TriangleStrip => todo!("process triangle strips"),

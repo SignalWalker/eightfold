@@ -1,8 +1,9 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Range};
 
 use eightfold_common::ArrayIndex;
+use num_traits::AsPrimitive;
 
-use crate::{Octree, OctreeSlice, Proxy, ProxyData};
+use crate::{Error, Octant, Octree, OctreeSlice, Proxy, ProxyData};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NodeData<'tree, T, Idx: ArrayIndex> {
@@ -33,6 +34,24 @@ pub type Void<'tree, T, Idx> = Node<'tree, T, Idx, ()>;
 pub type Leaf<'tree, T, Idx> = Node<'tree, T, Idx, &'tree T>;
 pub type Branch<'tree, T, Idx> = Node<'tree, T, Idx, &'tree [Idx; 8]>;
 
+impl<'tree, T, Idx: ArrayIndex, Data: 'tree> Node<'tree, T, Idx, Data> {
+    #[inline(always)]
+    pub const fn index(&self) -> Idx {
+        self.index
+    }
+
+    pub fn parent(&self) -> Option<Branch<'tree, T, Idx>> {
+        todo!()
+    }
+
+    #[inline(always)]
+    pub fn into_inner(self) -> (&'tree Octree<T, Idx>, Proxy<Idx>, Idx, Data) {
+        (self.tree, self.proxy, self.index, self.data)
+    }
+}
+
+impl<'tree, T, Idx: ArrayIndex> Node<'tree, T, Idx, NodeData<'tree, T, Idx>> {}
+
 #[derive(Debug)]
 pub enum NodeDataMut<'tree, T, Idx: ArrayIndex> {
     Void,
@@ -49,14 +68,6 @@ impl<'tree, T, Idx: ArrayIndex> NodeDataMut<'tree, T, Idx> {
         }
     }
 }
-
-impl<'tree, T, Idx: ArrayIndex, Data: 'tree> Node<'tree, T, Idx, Data> {
-    pub fn parent(&self) -> Option<Branch<'tree, T, Idx>> {
-        todo!()
-    }
-}
-
-impl<'tree, T, Idx: ArrayIndex> Node<'tree, T, Idx, NodeData<'tree, T, Idx>> {}
 
 #[derive(Debug)]
 pub struct NodeMut<'tree, T, Idx: ArrayIndex, Data: 'tree = NodeDataMut<'tree, T, Idx>> {
@@ -77,6 +88,48 @@ impl<'tree, T, Idx: ArrayIndex, Data: 'tree> NodeMut<'tree, T, Idx, Data> {
 
     pub fn data_mut(&'tree mut self) -> NodeDataMut<'tree, T, Idx> {
         NodeDataMut::from_tree_proxy(self.tree, self.proxy)
+    }
+
+    pub fn split(self) -> Result<BranchMut<'tree, T, Idx>, Error<Idx>>
+    where
+        usize: AsPrimitive<Idx>,
+        Range<Idx>: Iterator,
+    {
+        let (_, proxy) = self.tree.split(self.index)?;
+        Ok(BranchMut {
+            tree: self.tree,
+            proxy,
+            index: self.index,
+            _data: PhantomData,
+        })
+    }
+
+    pub fn leaf_data_or_insert_with<'data>(
+        &'data mut self,
+        f: impl FnOnce() -> T,
+    ) -> Result<&'data mut T, Error<Idx>>
+    where
+        usize: AsPrimitive<Idx>,
+    {
+        match self.proxy.data {
+            ProxyData::Leaf(idx) => Ok(&mut self.tree.leaf_data[idx.as_()]),
+            ProxyData::Void => {
+                let data_idx = self.tree.leaf_data.push(f());
+                self.proxy = {
+                    let prox = &mut self.tree.proxies[self.index.as_()];
+                    prox.data = ProxyData::Leaf(data_idx.as_());
+                    *prox
+                };
+                Ok(&mut self.tree.leaf_data[data_idx])
+            }
+            ProxyData::Branch(_) => Err(Error::CannotInsertIntoBranch),
+        }
+    }
+
+    pub fn into_leaf_mut(self) -> Result<LeafMut<'tree, T, Idx>, Error<Idx>> {
+        self.tree
+            .leaf_mut(self.index)
+            .ok_or(Error::NotALeaf(self.index))
     }
 }
 
@@ -101,6 +154,12 @@ impl<'tree, T, Idx: ArrayIndex> BranchMut<'tree, T, Idx> {
 
     pub fn child_indices_mut(&'tree mut self) -> &'tree mut [Idx; 8] {
         &mut self.tree.branch_data[self.proxy.branch().unwrap().as_()]
+    }
+
+    pub fn child(self, oct: Octant) -> NodeMut<'tree, T, Idx> {
+        self.tree
+            .node_mut(self.child_indices()[usize::from(oct)])
+            .unwrap()
     }
 }
 
