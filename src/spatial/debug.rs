@@ -10,6 +10,10 @@ where
     u8: AsPrimitive<Idx>,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.base)
+        write!(
+            f,
+            "{} (voxel_size: {:?}, aabb: {:?})",
+            self.base, self.voxel_size, self.aabb
+        )
     }
 }

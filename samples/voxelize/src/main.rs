@@ -1,5 +1,8 @@
 #![allow(unsafe_code)]
 
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
 use buffer::{BufferCache, BufferError};
 use clap::Parser;
 use eightfold::spatial::{Float, VoxelOctree};
@@ -9,12 +12,16 @@ use gltf::accessor::DataType;
 use gltf::mesh::Mode;
 use gltf::{Gltf, Node, Semantic};
 use nalgebra::{Affine3, Isometry3, Matrix4, Point3, Quaternion, Translation3, Unit, Vector3};
+use time::Instant;
 
 /// Functions and structures related specifically to the command-line interface.
 pub mod cli;
 
 /// Utilities for managing and accessing `glTF` data buffers.
 pub mod buffer;
+
+/// Utilities for presenting a preview window to the user
+pub mod preview;
 
 #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
 #[global_allocator]
@@ -136,6 +143,28 @@ pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
     }
 }
 
+/// Struct for keeping track of statistical data so we can print it out once we're done voxelizing.
+#[derive(Debug, Copy, Clone)]
+struct Stats {
+    pub start_time: Instant,
+    pub meshes: usize,
+    pub points: usize,
+    pub lines: usize,
+    pub triangles: usize,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            start_time: Instant::now(),
+            meshes: Default::default(),
+            points: Default::default(),
+            lines: Default::default(),
+            triangles: Default::default(),
+        }
+    }
+}
+
 /// Index a set of `glTF` mesh instances using an [Octree], then generate a voxel representation of
 /// those meshes from that Octree.
 pub fn main() {
@@ -143,30 +172,48 @@ pub fn main() {
     let cli = cli::Cli::parse();
     crate::cli::initialize_tracing(&cli.log_filter, cli.log_format);
 
+    // if we're using jemalloc, print out some memory usage stats and store the result for
+    // comparison later
     #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
     let memstats = trace_memory_stats(None);
 
     // prepare transformation applied to each mesh before processing
     let base_transform = Affine3::from_matrix_unchecked(cli.mesh_scale.to_homogeneous());
 
+    // open all the gltf documents (we're going to store references to them in the tree, so they
+    // need to live in memory longer than the tree)
+    let docs: Vec<(&PathBuf, Gltf)> = cli
+        .files
+        .iter()
+        .map(|p| {
+            (
+                p, // <- holding onto the file path so we can use it in tracing output
+                Gltf::open(p)
+                    .unwrap_or_else(|_| panic!("failed to deserialize {p:?} as glTF data")),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    // storing buffer cache data outside the loop for the same reason as with the gltf documents
+    let mut caches: HashMap<&Path, BufferCache> = HashMap::new();
+
     // build the octree
     let mut tree: VoxelOctree<Leaf, f32, u32> = VoxelOctree::new(cli.voxel_size);
 
-    // "for each file input on the command line (mapped as a [Gltf])..."
-    for (path, doc) in cli.files.iter().map(|p| {
-        (
-            p, // <- holding onto the file path so we can use it in tracing output
-            Gltf::open(p).unwrap_or_else(|_| panic!("failed to deserialize {p:?} as glTF data")),
-        )
-    }) {
+    // keep track of stats so we can print it out at the end of the program
+    let mut stats = Stats::default();
+
+    for (path, doc) in docs.iter() {
         // enter a tracing span for this glTF document. This is just for nicer log output.
         let _doc_span =
             tracing::info_span!("glTF_document", path = path.as_os_str().to_str()).entered();
 
         // glTF data can be split into multiple files, which may be used more than once.
         // To keep things efficient, we'll use a cache for this data.
-        let mut buffer_cache = BufferCache::new(&doc, path)
-            .unwrap_or_else(|_| panic!("failed to construct buffer cache for {path:?}"));
+        let mut buffer_cache = caches.entry(path.as_path()).or_insert_with(|| {
+            BufferCache::new(&doc, path)
+                .unwrap_or_else(|_| panic!("failed to construct buffer cache for {path:?}"))
+        });
 
         // gltf files are organized as a tree, where the root nodes are `scenes`, branch nodes are
         // `nodes`, and each `node` may have leaves of data, such as meshes or cameras.
@@ -182,6 +229,7 @@ pub fn main() {
             // recurse through all nodes in the scene, depth-first
             for scene_node in scene.nodes() {
                 process_node(
+                    &mut stats,
                     &mut tree,
                     &cli.voxel_size,
                     &mut buffer_cache,
@@ -193,15 +241,22 @@ pub fn main() {
         }
     }
 
+    let duration = Instant::now() - stats.start_time;
+
     #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
     trace_memory_stats(Some(memstats));
 
     tracing::debug!(%tree, "done");
+
+    tracing::info!(?stats, %duration, "done");
+
+    pollster::block_on(preview::show_preview(&docs, &caches, tree));
 }
 
 /// Process a [Node] and its descendants into an [Octree].
 #[tracing::instrument(name = "glTF_node", skip(tree, buffer_cache, node, parent_transform), fields(index = node.index(), name = node.name()))]
 fn process_node<'data>(
+    stats: &mut Stats,
     tree: &mut VoxelOctree<Leaf, f32, u32>,
     voxel_size: &Vector3<f32>,
     buffer_cache: &'data mut BufferCache<'_>,
@@ -215,10 +270,10 @@ fn process_node<'data>(
     // [Affine3].
     let transform = gltf_to_nalgebra(&node.transform()) * parent_transform;
     if let Some(mesh) = node.mesh() {
-        process_mesh(tree, voxel_size, buffer_cache, mesh, &transform)?;
+        process_mesh(stats, tree, voxel_size, buffer_cache, mesh, &transform)?;
     }
     for child in node.children() {
-        process_node(tree, voxel_size, buffer_cache, child, &transform)?;
+        process_node(stats, tree, voxel_size, buffer_cache, child, &transform)?;
     }
     Ok(())
 }
@@ -226,6 +281,7 @@ fn process_node<'data>(
 /// Process a [`gltf::Mesh`] into an [Octree].
 #[allow(clippy::needless_pass_by_value)]
 fn process_mesh<'data>(
+    stats: &mut Stats,
     tree: &mut VoxelOctree<Leaf, f32, u32>,
     voxel_size: &Vector3<f32>,
     buffer_cache: &'data mut BufferCache<'_>,
@@ -233,6 +289,7 @@ fn process_mesh<'data>(
     transform: &Affine3<f32>,
 ) -> Result<(), Error<u32, f32>> {
     tracing::info!("processing mesh");
+    stats.meshes += 1;
     for primitive in mesh.primitives() {
         let mode = primitive.mode();
         let _p_span = tracing::trace_span!(
@@ -261,6 +318,7 @@ fn process_mesh<'data>(
                     .map(|i| &positions[i as usize])
                     .map(|p| transform.transform_point(p))
                 {
+                    stats.points += 1;
                     tree.grow_to_contain(&point);
                     // this should never fail, because we just ensured that `point` lies within the
                     // space encompassed by `tree`
@@ -271,6 +329,7 @@ fn process_mesh<'data>(
             }
             Mode::Lines => {
                 for Line(a, b) in indices.map(|_i| todo!("lines from indices")) {
+                    stats.lines += 1;
                     tree.grow_to_contain(&a);
                     tree.grow_to_contain(&b);
                     tree.node_at_mut(&a)?
@@ -285,7 +344,9 @@ fn process_mesh<'data>(
             Mode::LineStrip => todo!("process line strips"),
             Mode::Triangles => {
                 let indices = indices.collect::<Vec<_>>();
-                tracing::trace!(amt = indices.len() / 3, "voxelizing triangles");
+                let amt = indices.len() / 3;
+                stats.triangles += amt;
+                tracing::trace!(%amt, "voxelizing triangles");
                 for Triangle(a, b, c) in indices.chunks_exact(3).map(|i| {
                     Triangle(
                         transform.transform_point(&positions[i[0] as usize]),

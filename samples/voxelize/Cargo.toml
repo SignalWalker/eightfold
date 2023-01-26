@@ -27,6 +27,9 @@ memmap2 = { version = "^0.5" }
 
 crossbeam = "^0.8"
 
+winit = "^0.27"
+pollster = "^0.2"
+
 # gltf
 gltf = { optional = true, version = "^1" }
 url = { optional = true, version = "^2", features = [ ] } # for reading URIs from within glTF documents
