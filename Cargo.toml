@@ -9,13 +9,19 @@ readme = true
 repository = "https://github.com/SignalWalker/eightfold"
 license = "LGPL-3.0-or-later"
 
-keywords = [ "gamedev", "graphics", "octree" ]
-categories = [ "data-structures", "rendering", "rendering::data-formats", "game-development", "mathematics" ]
+keywords = ["gamedev", "graphics", "octree"]
+categories = [
+  "data-structures",
+  "rendering",
+  "rendering::data-formats",
+  "game-development",
+  "mathematics",
+]
 
 [workspace]
 # using "samples" instead of "examples" because i don't want to have to have every example dependency in this file
 # "lib" contains extra libraries separate from the main eightfold library
-members = [ "samples/*", "lib/*" ]
+members = ["samples/*", "lib/*"]
 
 [dependencies]
 eightfold-common = { path = "./lib/common" }
@@ -38,15 +44,15 @@ hedron = { optional = true, path = "./lib/hedron" }
 # render
 
 [dev-dependencies]
-quickcheck = { version = "^1.0", default_features = false, features = [] }
+quickcheck = { version = "^1.0", default-features = false, features = [] }
 quickcheck_macros = { version = "^1.0" }
 
 [features]
 default = []
-spatial = [ "dep:parry3d" ]
-mesh = [ "spatial", "dep:hedron" ]
-render = [ "mesh" ]
-tracing = [ "dep:tracing" ]
+spatial = ["dep:parry3d"]
+mesh = ["spatial", "dep:hedron"]
+render = ["mesh"]
+tracing = ["dep:tracing"]
 
 # some specific configuration for CI builds so they go faster / have better caching
 [profile.ci]
@@ -55,7 +61,7 @@ opt-level = 0
 debug = 0
 strip = "symbols"
 debug-assertions = true # so that tests are subject to debug asserts
-overflow-checks = true # as above
+overflow-checks = true  # as above
 lto = "off"
 panic = 'unwind'
 incremental = false

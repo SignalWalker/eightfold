@@ -24,6 +24,7 @@ use num_traits::AsPrimitive;
 pub use proxy::*;
 pub use sample::*;
 pub use slice::*;
+#[cfg(feature = "tracing")]
 use tracing::instrument;
 
 use crate::{stablevec::StableVec, NodePoint, Octant, VoxelPoint};

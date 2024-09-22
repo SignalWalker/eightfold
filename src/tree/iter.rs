@@ -20,6 +20,7 @@ where
     type Item = (Proxy<Idx>, NodePoint<Idx>);
 
     fn next(&mut self) -> Option<Self::Item> {
+        #[warn(clippy::never_loop)]
         while let Some((prox, oct, np)) = self.curr_node {
             match prox.data {
                 ProxyData::Void | ProxyData::Leaf(_) => {
