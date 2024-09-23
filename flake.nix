@@ -49,7 +49,16 @@
           src = crane.cleanCargoSource (crane.path ./.);
           stdenv = stdenvFor.${system};
           strictDeps = true;
-          nativeBuildInputs = with pkgs; [];
+          hardeningDisable = [
+            "fortify"
+          ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            cmake
+          ];
+          buildInputs = with pkgs; [
+            fontconfig
+          ];
         })
         nixpkgsFor;
 
@@ -119,9 +128,9 @@
             ];
           };
           crane = (inputs.crane.mkLib pkgs).overrideToolchain toolchain;
-          stdenv = commonArgsFor.${system}.stdenv;
+          commonArgs = commonArgsFor.${system};
         in {
-          ${name} = (pkgs.mkShell.override {inherit stdenv;}) {
+          ${name} = (pkgs.mkShell.override {inherit (commonArgs) stdenv;}) {
             inputsFrom = (attrValues self.checks.${system}) ++ [selfPkgs.${name}];
             packages =
               [toolchain]
@@ -130,6 +139,7 @@
                 cargo-license
                 cargo-dist
               ]);
+            inherit (commonArgs) hardeningDisable;
             shellHook = let
               extraLdPaths =
                 pkgs.lib.makeLibraryPath (with pkgs; [
