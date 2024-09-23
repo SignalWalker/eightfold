@@ -1,7 +1,7 @@
 use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 
 use eightfold_common::ArrayIndex;
-use nalgebra::ClosedMul;
+use simba::scalar::ClosedMul;
 
 use crate::{Error, NodePoint, Octree};
 

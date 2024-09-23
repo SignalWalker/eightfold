@@ -18,11 +18,11 @@ use eightfold_common::ArrayIndex;
 pub use error::*;
 pub use iter::*;
 pub use merge::*;
-use nalgebra::ClosedMul;
 pub use node::*;
 use num_traits::AsPrimitive;
 pub use proxy::*;
 pub use sample::*;
+use simba::scalar::ClosedMul;
 pub use slice::*;
 #[cfg(feature = "tracing")]
 use tracing::instrument;

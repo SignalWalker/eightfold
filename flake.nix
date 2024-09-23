@@ -125,6 +125,7 @@
               "rust-analyzer"
               "rustfmt"
               "clippy"
+              "rust-src"
             ];
           };
           crane = (inputs.crane.mkLib pkgs).overrideToolchain toolchain;

@@ -6,20 +6,26 @@ edition = "2021"
 publish = false
 
 [dependencies]
-eightfold = { path = "../..", features = [ "render", "tracing" ] }
+eightfold = { path = "../..", features = ["render", "tracing"] }
 hedron = { path = "../../lib/hedron", features = [] }
 
-nalgebra = "^0.32"
+nalgebra = "^0.33"
 num-traits = "^0.2"
 
 tracing = "^0.1"
-tracing-subscriber = { version = "^0.3", features = [ "time", "env-filter", "parking_lot", "local-time", "json" ] }
+tracing-subscriber = { version = "^0.3", features = [
+  "time",
+  "env-filter",
+  "parking_lot",
+  "local-time",
+  "json",
+] }
 time = { version = "^0.3", features = ["formatting", "local-offset", "macros"] }
 thiserror = "^1.0"
 
 static_assertions = "^1.1"
 
-clap = { version = "^4", features = [ "derive", "env" ] }
+clap = { version = "^4", features = ["derive", "env"] }
 
 wgpu = { version = "^0.14" }
 
@@ -32,13 +38,14 @@ pollster = "^0.2"
 
 # gltf
 gltf = { optional = true, version = "^1" }
-url = { optional = true, version = "^2", features = [ ] } # for reading URIs from within glTF documents
+url = { optional = true, version = "^2", features = [
+] } # for reading URIs from within glTF documents
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = { optional = true, version = "^0.5" }
 tikv-jemalloc-ctl = { optional = true, version = "^0.5" }
 
 [features]
-default = [ "jemalloc", "gltf" ]
-gltf = [ "dep:gltf", "dep:url" ]
-jemalloc = [ "dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl" ]
+default = ["jemalloc", "gltf"]
+gltf = ["dep:gltf", "dep:url"]
+jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]

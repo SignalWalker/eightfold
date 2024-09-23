@@ -26,7 +26,8 @@ members = ["samples/*", "lib/*"]
 [dependencies]
 eightfold-common = { path = "./lib/common" }
 
-nalgebra = "^0.32"
+nalgebra = "^0.33"
+simba = "^0.9"
 num-traits = "^0.2"
 thiserror = "^1.0"
 
@@ -36,7 +37,7 @@ stablevec = { path = "./lib/stablevec" }
 tracing = { optional = true, version = "^0.1" }
 
 # spatial
-parry3d = { optional = true, version = "^0.13" }
+parry3d = { optional = true, version = "^0.17" }
 
 # mesh
 hedron = { optional = true, path = "./lib/hedron" }
