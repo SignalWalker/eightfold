@@ -142,9 +142,12 @@
               ]);
             inherit (commonArgs) hardeningDisable;
             shellHook = let
-              extraLdPaths =
-                pkgs.lib.makeLibraryPath (with pkgs; [
-                  ]);
+              extraLdPaths = pkgs.lib.makeLibraryPath (with pkgs; [
+                vulkan-loader
+                libGL
+                libxkbcommon
+                wayland
+              ]);
             in ''
               export LD_LIBRARY_PATH="${extraLdPaths}:$LD_LIBRARY_PATH"
             '';

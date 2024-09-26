@@ -9,6 +9,8 @@ publish = false
 eightfold = { path = "../..", features = ["render", "tracing"] }
 hedron = { path = "../../lib/hedron", features = [] }
 
+ouroboros = "^0.18"
+
 nalgebra = "^0.33"
 num-traits = "^0.2"
 
@@ -27,14 +29,14 @@ static_assertions = "^1.1"
 
 clap = { version = "^4", features = ["derive", "env"] }
 
-wgpu = { version = "^0.14" }
+wgpu = { version = "^22" }
 
-memmap2 = { version = "^0.5" }
+memmap2 = { version = "^0.9" }
 
 crossbeam = "^0.8"
 
-winit = "^0.27"
-pollster = "^0.2"
+winit = "^0.30"
+pollster = "^0.3"
 
 # gltf
 gltf = { optional = true, version = "^1" }
@@ -42,8 +44,8 @@ url = { optional = true, version = "^2", features = [
 ] } # for reading URIs from within glTF documents
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = { optional = true, version = "^0.5" }
-tikv-jemalloc-ctl = { optional = true, version = "^0.5" }
+tikv-jemallocator = { optional = true, version = "^0.6", features = ["stats"] }
+tikv-jemalloc-ctl = { optional = true, version = "^0.6", features = ["stats"] }
 
 [features]
 default = ["jemalloc", "gltf"]
