@@ -20,7 +20,8 @@ use crate::NodePoint;
 ///  Lower Upper     Lower Upper
 /// </pre>
 ///
-/// So, you can think of it as being a right-handed coordinate system.
+/// So, you can think of it as being a left-handed coordinate system, where +X is right, +Y is up,
+/// and +Z is forward.
 #[repr(transparent)]
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Octant(pub u8);
@@ -37,6 +38,7 @@ impl std::ops::Not for Octant {
     /// center of its parent volume.
     ///
     /// ```rust
+    /// use eightfold::Octant;
     /// assert_eq!(!Octant(7), Octant(0));
     /// assert_eq!(!Octant(6), Octant(1));
     /// assert_eq!(!Octant(5), Octant(2));
@@ -76,7 +78,7 @@ impl Octant {
         Self(
             ((i as u8) << 2)
           | ((j as u8) << 1)
-          | ((k as u8) << 0)
+          | (k as u8)
         )
     }
 

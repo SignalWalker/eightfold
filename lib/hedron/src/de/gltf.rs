@@ -2,7 +2,7 @@
 //!
 //! # Notes
 //!
-//! * Coordinate system: right-handed; the same as is used elsewhere in this library.
+//! * Coordinate system: right-handed; +X is left, +Y is up, +Z is forward.
 //! * `glTF` data *may* contain scenes, and it *may* specify a default scene, but these aren't required by the format.
 //!   * Sceneless data will be considered a library of entity data; ex. meshes, materials
 //!

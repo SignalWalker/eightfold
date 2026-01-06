@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 426da5394b4967cd08ce43ad9121bcb47377dcba15f127b95020c8a855555067 # shrinks to d = 2
+cc f0422712c1c24f0845a5b9391c12513b361480b291f7cf8d1ccab39939dfad2b # shrinks to inc = 0.0, azi = 3.4322877
+cc 6c86f4a021f9e1a8373a25b317a7372c56889ade0b1b5d41ba06a3b596eba5c7 # shrinks to rad = 119.672714, inc = 0.0, azi = 4.7124166
+cc 2a3819d76bdd6a422ba3844ca3dea15d2a93dd38106efdbfe6a2b56a36ebf6b0 # shrinks to p = Polar3 { rad: 472.96667, inc: Turn(0 (0tr)), azi: Turn(65535 (1tr)) }
+cc 5ec8a1b051bb48f860dcfd07433ba21b443f417fcb0e45d54988e6cbeb6548bd # shrinks to p = Polar3 { rad: 1.7124117e-22, inc: Turn(35476 (0.5413208tr)), azi: Turn(60024 (0.91589355tr)) }
+cc 49bfb4473f750f7fb09e4d60a40f7d69d6eb81968600d1c7534ff827078b745b # shrinks to inc = Turn(28236 (0.43084717tr)), azi = Turn(48543 (0.7407074tr))

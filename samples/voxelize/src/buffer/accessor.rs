@@ -41,6 +41,11 @@ impl<'buf> BufferAccessor<'buf> {
         self.count
     }
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+
     pub(crate) fn new(
         buffer: Arc<BufferCacheData<'buf>>,
         base: &gltf::Accessor<'_>,
@@ -64,6 +69,18 @@ impl<'buf> BufferAccessor<'buf> {
         })
     }
 
+    /// Return self as a `&[u8]`.
+    pub fn as_bytes(&self) -> &'buf [u8] {
+        unsafe {
+            slice::from_raw_parts(
+                self.buffer.as_ptr().add(self.offset).cast::<u8>(),
+                self.count * self.data_type.size() * self.dimensions.multiplicity(),
+            )
+        }
+    }
+
+    /// Return self as a `&[T]`.
+    ///
     /// # Safety
     ///
     /// * `T::Component::TYPE` == `self.data_type`
@@ -79,7 +96,6 @@ impl<'buf> BufferAccessor<'buf> {
         }
     }
 
-    #[allow(unsafe_code)]
     pub fn try_as_slice<T: BufferType>(&self) -> Result<&'buf [T], AccessorError> {
         if T::DIMENSIONS != self.dimensions {
             return Err(AccessorError::MismatchedDimensions {
@@ -93,6 +109,7 @@ impl<'buf> BufferAccessor<'buf> {
                 actual: T::Component::TYPE,
             });
         }
+        #[allow(unsafe_code)]
         Ok(unsafe { self.as_slice() })
     }
 }

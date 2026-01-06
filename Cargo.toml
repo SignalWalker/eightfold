@@ -26,7 +26,7 @@ members = ["samples/*", "lib/*"]
 [dependencies]
 eightfold-common = { path = "./lib/common" }
 
-nalgebra = "^0.33"
+nalgebra = { version = "^0.33", features = [] }
 simba = "^0.9"
 num-traits = "^0.2"
 thiserror = "^1.0"
@@ -45,8 +45,10 @@ hedron = { optional = true, path = "./lib/hedron" }
 # render
 
 [dev-dependencies]
-quickcheck = { version = "^1.0", default-features = false, features = [] }
-quickcheck_macros = { version = "^1.0" }
+proptest = "^1.5"
+proptest-derive = "^0.5"
+# FIX :: do we have to have separate dependencies like this just to enable the proptest feature?
+nalgebra = { version = "^0.33", features = ["proptest-support"] }
 
 [features]
 default = []
@@ -54,6 +56,10 @@ spatial = ["dep:parry3d"]
 mesh = ["spatial", "dep:hedron"]
 render = ["mesh"]
 tracing = ["dep:tracing"]
+
+# make property testing run faster
+[profile.test.package.proptest]
+opt-level = 3
 
 # some specific configuration for CI builds so they go faster / have better caching
 [profile.ci]

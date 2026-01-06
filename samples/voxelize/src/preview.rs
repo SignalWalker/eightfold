@@ -1,184 +1,319 @@
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
+    time::{Duration, Instant},
 };
 
-use eightfold::spatial::VoxelOctree;
+use dashmap::DashMap;
+use eightfold::spatial::{Aabb, VoxelOctree};
 use gltf::Gltf;
+use nalgebra::{vector, Affine3, Matrix4, Point3, Scale3, Vector2};
+use ouroboros::self_referencing;
+use pollster::FutureExt;
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
+    application::ApplicationHandler,
+    event::{ElementState, KeyEvent, WindowEvent},
+    event_loop::EventLoop,
+    keyboard::{KeyCode, PhysicalKey},
+    platform::wayland::WindowAttributesExtWayland,
+    window::{Window, WindowAttributes},
 };
 
-use crate::{buffer::BufferCache, Leaf};
+use crate::{
+    buffer::{BufferCache, GpuMesh},
+    Leaf,
+};
 
-struct GpuState {
-    instance: wgpu::Instance,
-    surface: wgpu::Surface,
-    adapter: wgpu::Adapter,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    surface_config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
-    window: Window,
+mod octree;
+mod render_gltf;
+
+mod camera;
+pub use camera::*;
+
+mod nalgebra_ext;
+pub use nalgebra_ext::*;
+
+mod pipeline;
+pub use pipeline::*;
+
+mod gpu_state;
+use gpu_state::*;
+
+mod event;
+pub use event::*;
+
+pub struct NodeStore {
+    nodes: DashMap<PipelineData, Vec<GpuMesh>>,
 }
 
-impl GpuState {
-    async fn new(window: Window) -> Self {
-        let size = window.inner_size();
+impl Default for NodeStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
-
-        let surface = unsafe { instance.create_surface(&window) };
-
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                force_fallback_adapter: false,
-                compatible_surface: Some(&surface),
-            })
-            .await
-            .expect("could not find wgpu adapter");
-
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                    label: None,
-                },
-                None,
-            )
-            .await
-            .unwrap();
-
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
-            width: size.width,
-            height: size.height,
-            present_mode: surface
-                .get_supported_present_modes(&adapter)
-                .iter()
-                .copied()
-                .find(|m| *m == wgpu::PresentMode::Mailbox)
-                .unwrap_or(wgpu::PresentMode::AutoVsync),
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
-        };
-
-        surface.configure(&device, &surface_config);
-
+impl NodeStore {
+    pub fn new() -> Self {
         Self {
-            instance,
-            surface,
-            surface_config,
-            adapter,
-            device,
-            queue,
-            size,
-            window,
+            nodes: DashMap::new(),
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.surface_config.width = new_size.width;
-            self.surface_config.height = new_size.height;
-            self.surface.configure(&self.device, &self.surface_config);
+    pub fn insert(node: GpuMesh) {
+        todo!()
+    }
+}
+
+#[self_referencing]
+struct WindowState {
+    window: Window,
+    #[borrows(window)]
+    #[covariant]
+    gpu: GpuState<'this>,
+}
+
+#[derive(Debug)]
+struct Stats {
+    pub target_phystime: Duration,
+    pub target_frametime: Duration,
+    pub last_render: Option<Instant>,
+    pub last_update: Instant,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            target_phystime: Duration::from_secs_f64(1.0 / 60.0),
+            target_frametime: Duration::from_secs_f64(1.0 / 60.0),
+            last_render: Default::default(),
+            last_update: Instant::now(),
+        }
+    }
+}
+
+struct AppState<'docs, 'caches> {
+    window: Option<WindowState>,
+    docs: &'docs [(&'docs PathBuf, Gltf)],
+    caches: &'caches HashMap<&'caches Path, BufferCache<'docs>>,
+    tree: VoxelOctree<Leaf, f32, u32>,
+    stats: Stats,
+    input: InputState,
+    scale: Scale3<f32>,
+    base_transform: Affine3<f32>,
+    camera: OrbitCamera,
+    show_reference: bool,
+}
+
+impl<'docs, 'caches> AppState<'docs, 'caches> {
+    fn new(
+        docs: &'docs [(&'docs PathBuf, Gltf)],
+        caches: &'caches HashMap<&'caches Path, BufferCache<'docs>>,
+        tree: VoxelOctree<Leaf, f32, u32>,
+        scale: Scale3<f32>,
+        base_transform: Affine3<f32>,
+        camera: OrbitCamera,
+        show_reference: bool,
+    ) -> Self {
+        Self {
+            window: None,
+            docs,
+            caches,
+            tree,
+            stats: Stats::default(),
+            input: InputState::default(),
+            scale,
+            base_transform,
+            camera,
+            show_reference,
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.surface.get_current_texture()?;
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+    fn update(&mut self) {
+        const SPIN_SPEED: Turn = Turn::new(u16::MAX / 2);
+        const ZOOM_SPEED: f32 = 0.50;
+        const MOVE_SPEED: f32 = 0.50;
+        let cdist = self.camera.distance();
+        let delta = (Instant::now() - self.stats.last_update).as_secs_f64();
+        let spin_speed = Turn::from_turn64(SPIN_SPEED.as_turn64() * delta);
+        let zoom_speed = cdist * ZOOM_SPEED * delta as f32;
+        let move_speed = cdist * MOVE_SPEED * delta as f32;
+        let mut trans = vector![0.0, 0.0];
+        for key in &self.input.pressed {
+            match key {
+                KeyCode::KeyH => {
+                    self.camera.orbit(spin_speed);
+                }
+                KeyCode::KeyJ => {
+                    self.camera.incline(-spin_speed);
+                }
+                KeyCode::KeyK => {
+                    self.camera.incline(spin_speed);
+                }
+                KeyCode::KeyL => {
+                    self.camera.orbit(-spin_speed);
+                }
+                KeyCode::KeyU => {
+                    self.camera.dolly(-zoom_speed);
+                }
+                KeyCode::KeyI => {
+                    self.camera.dolly(zoom_speed);
+                }
+                KeyCode::KeyW => {
+                    trans.y += 1.0;
+                }
+                KeyCode::KeyS => {
+                    trans.y -= 1.0;
+                }
+                KeyCode::KeyA => {
+                    trans.x -= 1.0;
+                }
+                KeyCode::KeyD => {
+                    trans.x += 1.0;
+                }
+                KeyCode::KeyQ => {
+                    self.camera.target.y += move_speed;
+                }
+                KeyCode::KeyE => {
+                    self.camera.target.y -= move_speed;
+                }
+                _ => {}
+            }
+        }
+        if trans.norm_squared() > 0.0 {
+            trans.normalize_mut();
+            self.camera.translate(trans * move_speed);
+        }
+        self.stats.last_update = Instant::now();
+    }
+}
 
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+impl<'docs, 'caches> ApplicationHandler for AppState<'docs, 'caches> {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        tracing::debug!("building new window");
+        let window = event_loop
+            .create_window(
+                WindowAttributes::new()
+                    .with_title(concat!(env!("CARGO_PKG_NAME"), " preview"))
+                    .with_name(env!("CARGO_PKG_NAME"), "")
+                    .with_resizable(true),
+            )
+            .unwrap();
+        self.window = Some(
+            WindowStateBuilder {
+                window,
+                gpu_builder: |window| {
+                    let res = GpuState::new(window, &self.camera).block_on();
+                    res.push_buffers(
+                        self.docs,
+                        self.caches,
+                        &self.tree,
+                        &self.scale,
+                        &self.base_transform,
+                    );
+                    //if self.show_reference {
+                    //    res.push_reference();
+                    //}
+                    res
+                },
+            }
+            .build(),
+        );
 
-        {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
-                        store: true,
+        event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+    }
+
+    fn new_events(
+        &mut self,
+        _event_loop: &winit::event_loop::ActiveEventLoop,
+        _cause: winit::event::StartCause,
+    ) {
+        self.update();
+        if let Some(ref window) = self.window {
+            match self.stats.last_render {
+                Some(last_render) => {
+                    if (Instant::now() - last_render) >= self.stats.target_frametime {
+                        window.borrow_window().request_redraw();
+                    }
+                }
+                None => window.borrow_window().request_redraw(),
+            }
+        }
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+        _window_id: winit::window::WindowId,
+        event: WindowEvent,
+    ) {
+        match event {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::RedrawRequested => {
+                if let Some(ref window) = self.window {
+                    let gpu = window.borrow_gpu();
+                    let size = window.borrow_window().inner_size();
+                    gpu.update_camera_buffer(&self.camera, size.width as f32 / size.height as f32);
+                    gpu.render().unwrap();
+                }
+                self.stats.last_render = Some(Instant::now());
+            }
+            WindowEvent::Resized(size) => {
+                if let Some(ref window) = self.window {
+                    window.borrow_gpu().resize(&self.camera, size);
+                }
+            }
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(keycode),
+                        state,
+                        repeat: false,
+                        ..
                     },
-                })],
-                depth_stencil_attachment: None,
-            });
+                ..
+            } => match state {
+                ElementState::Pressed => {
+                    self.input.pressed.insert(keycode);
+                }
+                ElementState::Released => {
+                    self.input.pressed.remove(&keycode);
+                }
+            },
+            _ => {}
         }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-
-        Ok(())
     }
-
-    pub fn update(&mut self) {}
 }
 
 pub async fn show_preview<'docs>(
     docs: &'docs [(&PathBuf, Gltf)],
     caches: &HashMap<&Path, BufferCache<'docs>>,
     tree: VoxelOctree<Leaf, f32, u32>,
-) -> ! {
-    let event_loop = EventLoop::new();
-    let window = winit::window::Window::new(&event_loop).unwrap();
-
-    let mut gpu_state = GpuState::new(window).await;
-
-    event_loop.run(move |event, _, control_flow| match event {
-        Event::WindowEvent {
-            ref event,
-            window_id,
-        } if window_id == gpu_state.window.id() => match event {
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Escape),
-                        ..
-                    },
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            WindowEvent::Resized(size) => gpu_state.resize(*size),
-            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                gpu_state.resize(**new_inner_size)
-            }
-            _ => {}
-        },
-        Event::RedrawRequested(window_id) if window_id == gpu_state.window.id() => {
-            gpu_state.update();
-            match gpu_state.render() {
-                Ok(_) => {}
-                Err(wgpu::SurfaceError::Lost) => gpu_state.resize(gpu_state.size),
-                Err(wgpu::SurfaceError::OutOfMemory) => {
-                    tracing::error!("out of memory");
-                    *control_flow = ControlFlow::Exit;
-                }
-                Err(e) => {
-                    tracing::warn!(?e);
-                }
-            }
-        }
-        Event::MainEventsCleared => {
-            gpu_state.window.request_redraw();
-        }
-        _ => {}
-    })
+    scale: Scale3<f32>,
+    base_transform: Affine3<f32>,
+    show_reference: bool,
+) {
+    let event_loop = EventLoop::new().unwrap();
+    let aabb = tree.aabb();
+    let tcent = aabb.center();
+    let tdiag = aabb.maxs() - tcent;
+    let cam_dist = (tdiag.x.powi(2) + tdiag.y.powi(2) + tdiag.z.powi(2)).sqrt();
+    //let cam_dist = Distance::new(1000);
+    tracing::debug!(camera_target = %tcent, camera_distance = %cam_dist);
+    let camera = OrbitCamera::new(
+        tcent,
+        Polar3::new(cam_dist, Turn(0), Turn(0)),
+        45.0,
+        0.1,
+        10000.0,
+    );
+    let mut state = AppState::new(
+        docs,
+        caches,
+        tree,
+        scale,
+        base_transform,
+        camera,
+        show_reference,
+    );
+    event_loop.run_app(&mut state).unwrap();
 }

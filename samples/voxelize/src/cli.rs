@@ -44,6 +44,9 @@ pub struct Cli {
     /// Scaling applied to each mesh before processing
     #[arg(short, long, default_value = "1,1,1", value_parser = parse_scale3::<f32>, value_name = "X,Y,Z")]
     pub mesh_scale: Scale3<f32>,
+    /// Display coordinate system reference in preview
+    #[arg(long)]
+    pub show_reference: bool,
     /// Files to voxelize
     #[arg(num_args = 1.., required = true, value_hint = ValueHint::FilePath)]
     pub files: Vec<PathBuf>,

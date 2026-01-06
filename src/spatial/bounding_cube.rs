@@ -30,13 +30,6 @@ impl<Real: Float> Aabc<Real> {
         ]
     }
 
-    pub fn new_invalid() -> Self {
-        Self {
-            origin: point![Real::MAX, Real::MAX, Real::MAX],
-            length: Real::MIN,
-        }
-    }
-
     /// Determine whether a point `p` lies within `self`.
     pub fn contains(&self, p: &Point3<Real>) -> bool {
         let Self {
@@ -102,7 +95,7 @@ impl<Real: Float> Aabc<Real> {
     ///
     /// This still works even if `p` ∉ `self`: the result is given as if taking the octant of `p`
     /// within an infinitely-large bounding box sharing a center with `self`.
-    pub fn octant_of<'err>(&self, p: &'err Point3<Real>) -> Octant {
+    pub fn octant_of(&self, p: &Point3<Real>) -> Octant {
         let o = &self.origin;
         let l2 = self.length / Real::TWO;
         Octant::new(p.x > o.x + l2, p.y > o.y + l2, p.z > o.z + l2)

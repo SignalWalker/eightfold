@@ -1,7 +1,7 @@
 #![allow(unsafe_code)]
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::{collections::HashMap, time::Instant};
 
 use buffer::{BufferCache, BufferError};
 use clap::Parser;
@@ -11,8 +11,11 @@ use eightfold::ArrayIndex;
 use gltf::accessor::DataType;
 use gltf::mesh::Mode;
 use gltf::{Gltf, Node, Semantic};
-use nalgebra::{Affine3, Isometry3, Matrix4, Point3, Quaternion, Translation3, Unit, Vector3};
-use time::Instant;
+use nalgebra::{
+    Affine3, Isometry3, Matrix4, Point3, Quaternion, Scale3, Translation3, Unit, Vector3,
+};
+
+use time::ext::InstantExt;
 
 /// Functions and structures related specifically to the command-line interface.
 pub mod cli;
@@ -84,6 +87,8 @@ type Leaf = Vec<u8>;
 ///
 /// * [nalgebra's explanation of transformations](https://www.nalgebra.org/docs/user_guide/points_and_transformations/#transformations)
 pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
+    // Transformation matrix from glTF's right-handed coordinate system to our left-handed system
+    const GLTF_TO_EIGHTFOLD: Scale3<f32> = Scale3::new(-1.0, 1.0, 1.0);
     match g {
         // the Matrix variant is stored as a column-major [[f32; 4]; 4], so we can just transmute
         // that into an [f32; 16] and use that directly.
@@ -91,7 +96,7 @@ pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
             // the glTF spec states that matrix transformations *must* be decomposable to their
             // translation, rotation, and scale components. Therefore, a matrix from a compliant
             // glTF file can be converted directly to an Affine3.
-            Affine3::<f32>::from_matrix_unchecked(Matrix4::from_column_slice(
+            let mut res = Affine3::<f32>::from_matrix_unchecked(Matrix4::from_column_slice(
                 // arrays are stored contiguously, so, in memory, an [[f32; 4]; 4] is identical to
                 // an [f32; 16], which means we can safely interpret one to the other.
                 //
@@ -99,7 +104,13 @@ pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
                 // type `A` as, instead, something of type `B`. It doesn't actually do anything at
                 // runtime.
                 unsafe { std::mem::transmute::<&[[f32; 4]; 4], &[f32; 16]>(m) }.as_slice(),
-            ))
+            ));
+            // Convert from glTF's right-handed coordinate system to our left-handed one
+            res
+                // The resulting matrix will still be an affine transformation, so this is fine
+                .matrix_mut_unchecked()
+                .append_nonuniform_scaling_mut(&GLTF_TO_EIGHTFOLD.vector);
+            res
         }
         // this is a bit more complicated, because we have to convert these three components into
         // a single Transform3.
@@ -137,7 +148,9 @@ pub fn gltf_to_nalgebra(g: &gltf::scene::Transform) -> Affine3<f32> {
                 // matrix is first scaled, then rotated, then translated. This is important because
                 // applying those transformations in another order would produce a different end
                 // result.
-                .prepend_nonuniform_scaling(&Vector3::from(*scl)),
+                .prepend_nonuniform_scaling(&Vector3::from(*scl))
+                // convert from glTF's coordinate system to our coordinate system
+                .append_nonuniform_scaling(&GLTF_TO_EIGHTFOLD.vector),
             )
         }
     }
@@ -177,8 +190,7 @@ pub fn main() {
     #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
     let memstats = trace_memory_stats(None);
 
-    // prepare transformation applied to each mesh before processing
-    let base_transform = Affine3::from_matrix_unchecked(cli.mesh_scale.to_homogeneous());
+    let base_transform = Affine3::identity();
 
     // open all the gltf documents (we're going to store references to them in the tree, so they
     // need to live in memory longer than the tree)
@@ -210,8 +222,8 @@ pub fn main() {
 
         // glTF data can be split into multiple files, which may be used more than once.
         // To keep things efficient, we'll use a cache for this data.
-        let mut buffer_cache = caches.entry(path.as_path()).or_insert_with(|| {
-            BufferCache::new(&doc, path)
+        let buffer_cache = caches.entry(path.as_path()).or_insert_with(|| {
+            BufferCache::new(doc, path)
                 .unwrap_or_else(|_| panic!("failed to construct buffer cache for {path:?}"))
         });
 
@@ -232,8 +244,9 @@ pub fn main() {
                     &mut stats,
                     &mut tree,
                     &cli.voxel_size,
-                    &mut buffer_cache,
+                    buffer_cache,
                     scene_node.clone(),
+                    &cli.mesh_scale,
                     &base_transform,
                 )
                 .unwrap();
@@ -241,7 +254,7 @@ pub fn main() {
         }
     }
 
-    let duration = Instant::now() - stats.start_time;
+    let duration = Instant::now().signed_duration_since(stats.start_time);
 
     #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
     trace_memory_stats(Some(memstats));
@@ -250,7 +263,14 @@ pub fn main() {
 
     tracing::info!(?stats, %duration, "done");
 
-    pollster::block_on(preview::show_preview(&docs, &caches, tree));
+    pollster::block_on(preview::show_preview(
+        &docs,
+        &caches,
+        tree,
+        cli.mesh_scale,
+        base_transform,
+        cli.show_reference,
+    ));
 }
 
 /// Process a [Node] and its descendants into an [Octree].
@@ -261,6 +281,7 @@ fn process_node<'data>(
     voxel_size: &Vector3<f32>,
     buffer_cache: &'data mut BufferCache<'_>,
     node: Node<'_>,
+    scale: &Scale3<f32>,
     parent_transform: &Affine3<f32>,
 ) -> Result<(), Error<u32, f32>> {
     tracing::trace!("processing node");
@@ -269,11 +290,32 @@ fn process_node<'data>(
     // library's [Transform] enum isn't very useful, so we convert it to a nalgebra
     // [Affine3].
     let transform = gltf_to_nalgebra(&node.transform()) * parent_transform;
+    let scaled_transform = {
+        let mut res: Affine3<f32> = transform;
+        res.matrix_mut_unchecked()
+            .append_nonuniform_scaling_mut(&scale.vector);
+        res
+    };
     if let Some(mesh) = node.mesh() {
-        process_mesh(stats, tree, voxel_size, buffer_cache, mesh, &transform)?;
+        process_mesh(
+            stats,
+            tree,
+            voxel_size,
+            buffer_cache,
+            mesh,
+            &scaled_transform,
+        )?;
     }
     for child in node.children() {
-        process_node(stats, tree, voxel_size, buffer_cache, child, &transform)?;
+        process_node(
+            stats,
+            tree,
+            voxel_size,
+            buffer_cache,
+            child,
+            scale,
+            &transform,
+        )?;
     }
     Ok(())
 }

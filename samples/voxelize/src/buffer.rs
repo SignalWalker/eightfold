@@ -1,3 +1,7 @@
+use core::slice;
+use crossbeam::sync::ShardedLock;
+use gltf::Gltf;
+use memmap2::Mmap;
 use std::{
     collections::HashMap,
     fs::{self, File},
@@ -6,13 +10,13 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use url::Url;
 
 mod accessor;
 pub use accessor::*;
-use crossbeam::sync::ShardedLock;
-use gltf::Gltf;
-use memmap2::Mmap;
-use url::Url;
+
+mod gpu;
+pub use gpu::*;
 
 /// Errors related to [`BufferCaches`](BufferCache).
 #[derive(Debug, thiserror::Error)]
@@ -29,6 +33,8 @@ pub enum BufferError {
     DocumentDoesNotIncludeBinaryBlob,
     #[error(transparent)]
     Accessor(#[from] AccessorError),
+    #[error(transparent)]
+    View(#[from] ViewError),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -143,6 +149,36 @@ impl<'doc> BufferCache<'doc> {
         })
     }
 
+    /// Parse a [`gltf::buffer::Source`] relative to the path to the glTF document.
+    pub fn parse_source(
+        &self,
+        src: gltf::buffer::Source,
+    ) -> Result<BufferCacheId, url::ParseError> {
+        match src {
+            gltf::buffer::Source::Bin => Ok(BufferCacheId::Blob),
+            gltf::buffer::Source::Uri(u) => url::Url::options()
+                .base_url(Some(&self.src_path))
+                .parse(u)
+                .map(BufferCacheId::Url),
+        }
+    }
+
+    pub fn source_url(&self, src: gltf::buffer::Source) -> Result<url::Url, url::ParseError> {
+        match self.parse_source(src)? {
+            BufferCacheId::Blob => Ok(self.src_path.clone()),
+            BufferCacheId::Url(url) => Ok(url),
+        }
+    }
+
+    pub fn image_source_url(&self, src: &gltf::image::Source) -> Result<url::Url, url::ParseError> {
+        match src {
+            gltf::image::Source::View { view, .. } => self.source_url(view.buffer().source()),
+            gltf::image::Source::Uri { uri, .. } => url::Url::options()
+                .base_url(Some(&self.src_path))
+                .parse(uri),
+        }
+    }
+
     #[tracing::instrument(skip(self), fields(src_url = self.src_path.as_str(), uri = uri.as_ref()))]
     pub fn load(&self, uri: impl AsRef<str>) -> Result<Arc<BufferCacheData<'doc>>, BufferError> {
         let uri = url::Url::options()
@@ -151,8 +187,8 @@ impl<'doc> BufferCache<'doc> {
         if uri.scheme() != "file" {
             return Err(BufferError::UnsupportedUriScheme(uri.scheme().to_owned()));
         }
-
         let data_key = BufferCacheId::from(uri.clone());
+
         if let Some(data) = self.data.read().unwrap().get(&data_key).cloned() {
             tracing::trace!(url = uri.as_str(), "already loaded glTF buffer");
             return Ok(data);
@@ -181,6 +217,16 @@ impl<'doc> BufferCache<'doc> {
         }
     }
 
+    pub fn load_gltf_image(
+        &self,
+        image: &gltf::Image<'_>,
+    ) -> Result<Arc<BufferCacheData<'doc>>, BufferError> {
+        match image.source() {
+            gltf::image::Source::View { view, .. } => self.load_gltf_buffer(&view.buffer()),
+            gltf::image::Source::Uri { uri, .. } => self.load(uri),
+        }
+    }
+
     pub fn load_gltf_buffer(
         &self,
         buffer: &gltf::Buffer<'_>,
@@ -206,5 +252,48 @@ impl<'doc> BufferCache<'doc> {
             acc,
         )
         .map_err(BufferError::from)
+    }
+
+    pub fn view(&self, view: &gltf::buffer::View<'_>) -> Result<BufferView<'_>, BufferError> {
+        BufferView::new(self.load_gltf_buffer(&view.buffer())?, view).map_err(BufferError::from)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ViewError {
+    #[error("views with non-zero stride are unsupported")]
+    Stride,
+}
+
+pub struct BufferView<'buf> {
+    pub(crate) buffer: Arc<BufferCacheData<'buf>>,
+    pub(crate) length: usize,
+    pub(crate) offset: usize,
+    pub(crate) stride: Option<usize>,
+}
+
+impl<'buf> BufferView<'buf> {
+    pub(crate) fn new(
+        buffer: Arc<BufferCacheData<'buf>>,
+        view: &gltf::buffer::View<'_>,
+    ) -> Result<Self, ViewError> {
+        if view.stride().is_some() {
+            return Err(ViewError::Stride);
+        }
+        Ok(Self {
+            buffer,
+            length: view.length(),
+            offset: view.offset(),
+            stride: view.stride(),
+        })
+    }
+
+    pub fn as_bytes(&self) -> &'buf [u8] {
+        unsafe {
+            slice::from_raw_parts(
+                self.buffer.as_ptr().add(self.offset).cast::<u8>(),
+                self.length,
+            )
+        }
     }
 }

@@ -2,13 +2,8 @@
   description = "";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    alejandra = {
-      url = "github:kamadorueda/alejandra";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     crane = {
       url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     advisory-db = {
       url = "github:rustsec/advisory-db";
@@ -58,6 +53,8 @@
           ];
           buildInputs = with pkgs; [
             fontconfig
+            # for avif decoding
+            dav1d
           ];
         })
         nixpkgsFor;
@@ -66,7 +63,7 @@
       name = cargoToml.package.metadata.crane.name or cargoToml.package.name or cargoToml.workspace.metadata.crane.name;
       version = cargoToml.package.version or cargoToml.workspace.package.version;
     in {
-      formatter = std.mapAttrs (system: pkgs: pkgs.default) inputs.alejandra.packages;
+      formatter = std.mapAttrs (system: pkgs: pkgs.nixfmt-rfc-style) nixpkgsFor;
       packages =
         std.mapAttrs (system: pkgs: let
           crane = craneFor.${system};
@@ -139,19 +136,34 @@
                 cargo-audit
                 cargo-license
                 cargo-dist
+                renderdoc
               ]);
             inherit (commonArgs) hardeningDisable;
             shellHook = let
               extraLdPaths = pkgs.lib.makeLibraryPath (with pkgs; [
                 vulkan-loader
+                vulkan-validation-layers
                 libGL
                 libxkbcommon
                 wayland
+                # winit x11 support
+                xorg.libX11
+                xorg.libXcursor
+                xorg.libxcb
+                xorg.libXi
+              ]);
+              extraVkLayersExplicit = pkgs.lib.makeSearchPath "share/vulkan/explicit_layer.d" (with pkgs; [
+                vulkan-validation-layers
+              ]);
+              extraVkLayersImplicit = pkgs.lib.makeSearchPath "share/vulkan/implicit_layer.d" (with pkgs; [
+                renderdoc
               ]);
             in ''
               export LD_LIBRARY_PATH="${extraLdPaths}:$LD_LIBRARY_PATH"
+              export VK_ADD_LAYER_PATH="${extraVkLayersExplicit}:${extraVkLayersImplicit}:$VK_ADD_LAYER_PATH"
             '';
             env = {
+              VK_LOADER_LAYERS_ENABLE = "*validation";
             };
           };
           default = self.devShells.${system}.${name};

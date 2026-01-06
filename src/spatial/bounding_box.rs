@@ -1,8 +1,13 @@
+use std::ops::Mul;
+
 use nalgebra::Point3;
 
 use crate::Octant;
 
 use super::{Aabc, Float};
+
+#[cfg(test)]
+mod test;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AabbError<Real: Float> {
@@ -15,8 +20,8 @@ pub enum AabbError<Real: Float> {
 /// Similar to [`parry3d::Aabb`], except generic over the Real type.
 #[derive(Clone, Copy, PartialEq)]
 pub struct Aabb<Real: Float> {
-    pub mins: Point3<Real>,
-    pub maxs: Point3<Real>,
+    mins: Point3<Real>,
+    maxs: Point3<Real>,
 }
 
 impl<Real: Float> std::fmt::Debug for Aabb<Real> {
@@ -26,9 +31,35 @@ impl<Real: Float> std::fmt::Debug for Aabb<Real> {
 }
 
 impl<Real: Float> Aabb<Real> {
+    /// # Safety
+    /// - Each value in `mins` must be <= the corresponding value in `maxs`
     #[inline]
-    pub fn new(mins: Point3<Real>, maxs: Point3<Real>) -> Self {
+    pub const unsafe fn new_unchecked(mins: Point3<Real>, maxs: Point3<Real>) -> Self {
         Self { mins, maxs }
+    }
+
+    pub fn new(mut a: Point3<Real>, mut b: Point3<Real>) -> Self {
+        use std::mem::swap;
+        if a.x > b.x {
+            swap(&mut a.x, &mut b.x);
+        }
+        if a.y > b.y {
+            swap(&mut a.y, &mut b.y);
+        }
+        if a.z > b.z {
+            swap(&mut a.z, &mut b.z);
+        }
+        unsafe { Self::new_unchecked(a, b) }
+    }
+
+    #[inline]
+    pub fn mins(&self) -> &Point3<Real> {
+        &self.mins
+    }
+
+    #[inline]
+    pub fn maxs(&self) -> &Point3<Real> {
+        &self.maxs
     }
 
     #[inline]

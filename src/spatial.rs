@@ -13,6 +13,7 @@ pub(crate) mod macros;
 mod octant;
 mod traits;
 use num_traits::AsPrimitive;
+#[cfg(feature = "tracing")]
 use tracing::instrument;
 pub use traits::*;
 
@@ -40,10 +41,10 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
             base: Octree::new(),
             height: Idx::ZERO,
             voxel_size,
-            aabb: Aabb {
-                mins: nalgebra::point![Real::ZERO, Real::ZERO, Real::ZERO],
-                maxs: voxel_size.into(),
-            },
+            aabb: Aabb::new(
+                nalgebra::point![Real::ZERO, Real::ZERO, Real::ZERO],
+                voxel_size.into(),
+            ),
         }
     }
 
@@ -72,7 +73,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     /// Grow `self` until it contains a point `p`, and return whether the size of `self` changed.
     ///
     /// Does nothing if `self` already contains `p`.
-    #[instrument(skip(self))]
+    #[cfg_attr(feature = "tracing", instrument(skip(self)))]
     pub fn grow_to_contain(&mut self, p: &Point3<Real>) -> bool
     where
         usize: AsPrimitive<Idx>,
@@ -83,6 +84,7 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
             self.grow(!self.aabb.octant_of(p));
             grew = true;
         }
+        #[cfg(feature = "tracing")]
         if grew {
             tracing::trace!(?old_aabb, new_aabb = ?self.aabb, "grew tree");
         }
@@ -98,8 +100,8 @@ impl<T, Real: Float, Idx: ArrayIndex> VoxelOctree<T, Real, Idx> {
     where
         usize: AsPrimitive<Idx>,
     {
-        let g1 = self.grow_to_contain(&vol.mins);
-        self.grow_to_contain(&vol.maxs) || g1
+        let g1 = self.grow_to_contain(vol.mins());
+        self.grow_to_contain(vol.maxs()) || g1
     }
 
     /// Get the index of the deepest node containing a given [point](Point3) `p`.

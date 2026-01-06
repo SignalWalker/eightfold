@@ -11,8 +11,12 @@ hedron = { path = "../../lib/hedron", features = [] }
 
 ouroboros = "^0.18"
 
-nalgebra = "^0.33"
+nalgebra = { version = "^0.33", features = ["bytemuck"] }
+# this is literally just for the left-handed perspective matrix
+nalgebra-glm = "^0.19"
 num-traits = "^0.2"
+
+bytemuck = { version = "^1", features = ["derive"] }
 
 tracing = "^0.1"
 tracing-subscriber = { version = "^0.3", features = [
@@ -29,11 +33,13 @@ static_assertions = "^1.1"
 
 clap = { version = "^4", features = ["derive", "env"] }
 
-wgpu = { version = "^22" }
+wgpu = { version = "^23", features = ["naga-ir", "strict_asserts", "counters"] }
 
 memmap2 = { version = "^0.9" }
 
 crossbeam = "^0.8"
+parking_lot = "^0.12"
+dashmap = "^6"
 
 winit = "^0.30"
 pollster = "^0.3"
@@ -43,11 +49,20 @@ gltf = { optional = true, version = "^1" }
 url = { optional = true, version = "^2", features = [
 ] } # for reading URIs from within glTF documents
 
+# texture decoding
+image = { version = "^0.25", features = ["avif-native"] }
+
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = { optional = true, version = "^0.6", features = ["stats"] }
 tikv-jemalloc-ctl = { optional = true, version = "^0.6", features = ["stats"] }
 
+[dev-dependencies]
+proptest = "^1.5"
+proptest-derive = "^0.5"
+approx = "^0.5"
+
 [features]
 default = ["jemalloc", "gltf"]
 gltf = ["dep:gltf", "dep:url"]
+gltf-extras = ["gltf", "gltf/extras"]
 jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
